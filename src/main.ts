@@ -42,6 +42,7 @@ type AppState = {
 const WORLD_SPAN = WORLD_END_YEAR - WORLD_START_YEAR
 const MIN_VIEW_SPAN = 8
 const eventLanes = 4
+const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin)
 const eventExplainers: Record<string, string> = {
   hastings: 'William won a huge battle and became king of England.',
   domesday: 'This was a giant survey showing who owned land and animals.',
@@ -914,14 +915,20 @@ function formatYears(value: number): string {
   return `${Math.round(value)} years`
 }
 
+function resolveAppUrl(path: string): string {
+  return new URL(path.replace(/^\/+/, ''), appBaseUrl).toString()
+}
+
 async function loadPortraitManifest(): Promise<void> {
   try {
-    const response = await fetch('/portraits/manifest.json')
+    const response = await fetch(resolveAppUrl('portraits/manifest.json'))
     if (!response.ok) return
 
     const manifest = (await response.json()) as Record<string, string>
 
-    state.portraitUrls = new Map(Object.entries(manifest))
+    state.portraitUrls = new Map(
+      Object.entries(manifest).map(([id, path]) => [id, resolveAppUrl(path)]),
+    )
     render()
   } catch {
     // Local portraits are optional at startup; initials remain as fallback.

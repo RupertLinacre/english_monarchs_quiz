@@ -61,7 +61,7 @@ for (const entry of entries) {
   const buffer = Buffer.from(await portraitResponse.arrayBuffer())
 
   await fs.writeFile(filePath, buffer)
-  manifest[entry.id] = `/portraits/${fileName}`
+  manifest[entry.id] = `portraits/${fileName}`
   console.log(`Saved ${entry.id} -> ${fileName}`)
   await sleep(600)
 }
