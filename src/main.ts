@@ -571,7 +571,7 @@ function revealMonarch(monarchId: string, source: 'answer' | 'cheat'): void {
 
   state.discovered.add(monarchId)
   state.recentMonarchId = monarchId
-  state.selectedMonarchId = source === 'cheat' ? monarchId : state.selectedMonarchId
+  state.selectedMonarchId = monarchId
 
   if (source === 'answer') {
     state.status = `${monarch.name} accepted. ${state.discovered.size} of ${monarchs.length} found.`
