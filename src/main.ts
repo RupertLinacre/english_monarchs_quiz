@@ -145,12 +145,8 @@ app.innerHTML = `
   <main class="app-shell">
     <section class="hero">
       <div class="hero__copy">
-        <p class="eyebrow">1066 to today</p>
+        <p class="eyebrow">1050 to today</p>
         <h1>Monarchs of England, Great Britain, and the United Kingdom</h1>
-        <p class="lede">
-          Reveal each ruler on a zoomable timeline. Houses stay visible, events stay anchored below,
-          and every correct answer pulls the view into the right part of history.
-        </p>
       </div>
       <div class="summary-grid">
         <article class="stat-card">
@@ -178,7 +174,7 @@ app.innerHTML = `
           autocomplete="off"
           autocapitalize="words"
           spellcheck="false"
-          placeholder="Start typing: William the Conqueror, Anne, Victoria..."
+          placeholder="Type a monarch name..."
         />
       </label>
       <div class="control-cluster">
@@ -192,15 +188,6 @@ app.innerHTML = `
     <p id="status-text" class="status-text"></p>
 
     <section class="timeline-panel">
-      <div class="timeline-panel__head">
-        <div>
-          <p class="timeline-panel__eyebrow">Interactive timeline</p>
-          <h2>Zoom with the wheel, drag to pan, or let correct answers steer you.</h2>
-        </div>
-        <p class="timeline-panel__hint">
-          Labels collapse to badges or dots when space runs out, so the timeline stays readable at every zoom level.
-        </p>
-      </div>
       <div id="timeline-viewport" class="timeline-viewport" aria-label="Zoomable monarch timeline"></div>
       <section id="monarch-info" class="monarch-info" aria-live="polite"></section>
     </section>

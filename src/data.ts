@@ -33,7 +33,7 @@ export interface HousePeriod {
 
 const currentYear = new Date().getFullYear()
 
-export const WORLD_START_YEAR = 1066
+export const WORLD_START_YEAR = 1050
 export const WORLD_END_YEAR = currentYear + 1
 
 export const housePeriods: HousePeriod[] = [
