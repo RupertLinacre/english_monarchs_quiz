@@ -352,17 +352,19 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
   const houseColor = houseColorMap.get(monarch.house) ?? '#6c4b3a'
   const top = 344 + lane * 16
   const exactDates = getExactReignLabel(monarch.id, reignIndex, reign)
+  const accessibleLabel = revealed ? `${monarch.name}: ${exactDates}` : `${exactDates}. Shift-click to reveal this monarch.`
 
   return `
     <div
       class="reign-segment ${revealed ? 'reign-segment--found' : 'reign-segment--ghost'} ${recent ? 'reign-segment--recent' : ''}"
       style="left:${metrics.leftPct}%; width:${Math.max(metrics.widthPct, 0.35)}%; top:${top}px; --segment-color:${houseColor};"
-      title="${monarch.name}: ${exactDates}"
+      title="${revealed ? `${monarch.name}: ${exactDates}` : exactDates}"
       tabindex="0"
-      aria-label="${monarch.name}: ${exactDates}"
+      aria-label="${accessibleLabel}"
+      data-monarch-id="${monarch.id}"
     >
       <span class="reign-segment__tooltip">
-        <strong>${monarch.name}</strong>
+        ${revealed ? `<strong>${monarch.name}</strong>` : ''}
         <span>${exactDates}</span>
       </span>
     </div>
@@ -545,22 +547,7 @@ function tryResolveAnswer(): void {
 
   const matchId = aliasMap.get(normalized)
   if (!matchId) return
-  if (state.discovered.has(matchId)) return
-
-  const monarch = monarchById.get(matchId)
-  if (!monarch) return
-
-  state.discovered.add(matchId)
-  state.recentMonarchId = matchId
-  state.status = `${monarch.name} accepted. ${state.discovered.size} of ${monarchs.length} found.`
-  state.inputValue = ''
-  boundAnswerInput.value = ''
-  zoomToMonarch(monarch)
-
-  if (state.discovered.size === monarchs.length) {
-    state.completedAt = Date.now()
-    state.status = `Complete in ${formatElapsed(state.completedAt - state.startedAt)}. All ${monarchs.length} monarchs revealed.`
-  }
+  revealMonarch(matchId, 'answer')
 }
 
 function revealAllMonarchs(): void {
@@ -574,6 +561,32 @@ function revealAllMonarchs(): void {
   state.status = `All ${monarchs.length} monarchs revealed for timeline review.`
 
   render()
+}
+
+function revealMonarch(monarchId: string, source: 'answer' | 'cheat'): void {
+  if (state.discovered.has(monarchId)) return
+
+  const monarch = monarchById.get(monarchId)
+  if (!monarch) return
+
+  state.discovered.add(monarchId)
+  state.recentMonarchId = monarchId
+  state.selectedMonarchId = source === 'cheat' ? monarchId : state.selectedMonarchId
+
+  if (source === 'answer') {
+    state.status = `${monarch.name} accepted. ${state.discovered.size} of ${monarchs.length} found.`
+    state.inputValue = ''
+    boundAnswerInput.value = ''
+  } else {
+    state.status = `${monarch.name} revealed by cheat. ${state.discovered.size} of ${monarchs.length} found.`
+  }
+
+  zoomToMonarch(monarch)
+
+  if (state.discovered.size === monarchs.length) {
+    state.completedAt = Date.now()
+    state.status = `Complete in ${formatElapsed(state.completedAt - state.startedAt)}. All ${monarchs.length} monarchs revealed.`
+  }
 }
 
 function zoomToMonarch(monarch: Monarch): void {
@@ -937,27 +950,50 @@ async function loadPortraitManifest(): Promise<void> {
 
 function bindMonarchSelection(viewport: HTMLDivElement): void {
   viewport.addEventListener('click', (event) => {
-    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
-    if (!target) return
+    const cardTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
+    if (cardTarget) {
+      const monarchId = cardTarget.dataset.monarchId
+      if (!monarchId || !state.discovered.has(monarchId)) return
 
-    const monarchId = target.dataset.monarchId
-    if (!monarchId || !state.discovered.has(monarchId)) return
+      state.selectedMonarchId = monarchId
+      render()
+      return
+    }
 
-    state.selectedMonarchId = monarchId
+    const segmentTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.reign-segment[data-monarch-id]') : null
+    if (!segmentTarget || !event.shiftKey) return
+
+    const monarchId = segmentTarget.dataset.monarchId
+    if (!monarchId || state.discovered.has(monarchId)) return
+
+    revealMonarch(monarchId, 'cheat')
     render()
   })
 
   viewport.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
 
-    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
-    if (!target) return
+    const cardTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
+    if (cardTarget) {
+      const monarchId = cardTarget.dataset.monarchId
+      if (!monarchId || !state.discovered.has(monarchId)) return
 
-    const monarchId = target.dataset.monarchId
-    if (!monarchId || !state.discovered.has(monarchId)) return
+      event.preventDefault()
+      state.selectedMonarchId = monarchId
+      render()
+      return
+    }
+
+    if (!event.shiftKey) return
+
+    const segmentTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.reign-segment[data-monarch-id]') : null
+    if (!segmentTarget) return
+
+    const monarchId = segmentTarget.dataset.monarchId
+    if (!monarchId || state.discovered.has(monarchId)) return
 
     event.preventDefault()
-    state.selectedMonarchId = monarchId
+    revealMonarch(monarchId, 'cheat')
     render()
   })
 
@@ -988,7 +1024,7 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
   )
 
   viewport.addEventListener('pointerdown', (event) => {
-    const target = event.target instanceof HTMLElement ? event.target.closest('.monarch-card[data-monarch-id]') : null
+    const target = event.target instanceof HTMLElement ? event.target.closest('.monarch-card[data-monarch-id], .reign-segment[data-monarch-id]') : null
     if (target) {
       return
     }
