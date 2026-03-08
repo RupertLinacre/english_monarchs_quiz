@@ -1,0 +1,116 @@
+import type { Monarch, ReignRange } from './data'
+
+export const reignExactDates: Record<string, string[]> = {
+  'william-i': ['14 October 1066 to 9 September 1087'],
+  'william-ii': ['26 September 1087 to 2 August 1100'],
+  'henry-i': ['5 August 1100 to 1 December 1135'],
+  stephen: ['22 December 1135 to 25 October 1154'],
+  matilda: ['7 April 1141 to 1 November 1141'],
+  'henry-ii': ['19 December 1154 to 6 July 1189'],
+  'richard-i': ['3 September 1189 to 6 April 1199'],
+  john: ['27 May 1199 to 19 October 1216'],
+  'henry-iii': ['28 October 1216 to 16 November 1272'],
+  'edward-i': ['20 November 1272 to 7 July 1307'],
+  'edward-ii': ['8 July 1307 to 25 January 1327'],
+  'edward-iii': ['25 January 1327 to 21 June 1377'],
+  'richard-ii': ['21 June 1377 to 29 September 1399'],
+  'henry-iv': ['30 September 1399 to 20 March 1413'],
+  'henry-v': ['21 March 1413 to 31 August 1422'],
+  'henry-vi': ['1 September 1422 to 4 March 1461', '3 October 1470 to 11 April 1471'],
+  'edward-iv': ['4 March 1461 to 3 October 1470', '11 April 1471 to 9 April 1483'],
+  'edward-v': ['9 April 1483 to 25 June 1483'],
+  'richard-iii': ['26 June 1483 to 22 August 1485'],
+  'henry-vii': ['22 August 1485 to 21 April 1509'],
+  'henry-viii': ['22 April 1509 to 28 January 1547'],
+  'edward-vi': ['28 January 1547 to 6 July 1553'],
+  'jane-grey': ['10 July 1553 to 19 July 1553'],
+  'mary-i': ['19 July 1553 to 17 November 1558'],
+  'elizabeth-i': ['17 November 1558 to 24 March 1603'],
+  'james-i': ['24 March 1603 to 27 March 1625'],
+  'charles-i': ['27 March 1625 to 30 January 1649'],
+  'charles-ii': ['29 May 1660 to 6 February 1685'],
+  'james-ii': ['6 February 1685 to 11 December 1688'],
+  'william-iii': ['13 February 1689 to 8 March 1702'],
+  'mary-ii': ['13 February 1689 to 28 December 1694'],
+  anne: ['8 March 1702 to 1 August 1714'],
+  'george-i': ['1 August 1714 to 11 June 1727'],
+  'george-ii': ['11 June 1727 to 25 October 1760'],
+  'george-iii': ['25 October 1760 to 29 January 1820'],
+  'george-iv': ['29 January 1820 to 26 June 1830'],
+  'william-iv': ['26 June 1830 to 20 June 1837'],
+  victoria: ['20 June 1837 to 22 January 1901'],
+  'edward-vii': ['22 January 1901 to 6 May 1910'],
+  'george-v': ['6 May 1910 to 20 January 1936'],
+  'edward-viii': ['20 January 1936 to 11 December 1936'],
+  'george-vi': ['11 December 1936 to 6 February 1952'],
+  'elizabeth-ii': ['6 February 1952 to 8 September 2022'],
+  'charles-iii': ['8 September 2022 to present'],
+}
+
+const bioOverrides: Record<string, string> = {
+  'william-i': "William the Conqueror won the Battle of Hastings in 1066 and changed England a lot. He brought in Norman rule, built castles, and ordered the Domesday Book so he could count land, people, and wealth.",
+  'william-ii': "William II was known as 'William Rufus' because he had a very red face! He died in a mysterious accident when he was shot by a stray arrow while hunting in the New Forest.",
+  'henry-i': "Henry I was the youngest son of William the Conqueror. Children often learn about the sad story of the White Ship, which sank in the sea with his only son on board.",
+  'stephen': "Stephen had a huge argument with his cousin Matilda over who should rule England. This started a long time of fighting known as 'The Anarchy', where barons built castles without permission.",
+  'matilda': "Empress Matilda fought a long war against her cousin Stephen to be the ruler of England. Although she was never officially crowned Queen, her son grew up to be a powerful King.",
+  'henry-ii': "Henry II was a very energetic king who ruled England and a large part of France. He is famous for his terrible argument with his former friend Thomas Becket, the Archbishop of Canterbury.",
+  'richard-i': "Richard I is famous as 'Richard the Lionheart' because he was a very brave warrior. Even though he was King of England, he spent almost his whole reign far away fighting in the Crusades.",
+  'john': "King John is remembered for Magna Carta. Powerful barons forced him to agree that a king could not do whatever he wanted. People still learn about him because this helped start ideas about fair laws.",
+  'henry-iii': "Henry III ruled for a very long time and loved beautiful things. He rebuilt Westminster Abbey, and even had a pet polar bear that swam in the River Thames to catch fish!",
+  'edward-i': "Edward I was a tall, fierce warrior known as 'Longshanks' because of his long legs. He built massive, strong castles in Wales that you can still visit today.",
+  'edward-ii': "Edward II was not a very successful soldier and lost the famous Battle of Bannockburn to the Scottish army. He was eventually forced to give up his crown.",
+  'edward-iii': "Edward III started a huge fight with France called the Hundred Years' War. He had a famous son known as the Black Prince, who wore dark armour into battle.",
+  'richard-ii': "Richard II became king when he was only 10 years old! While he was still a boy, he had to face the Peasants' Revolt, where poor people marched to London to complain about taxes.",
+  'henry-iv': "Henry IV took the throne from his cousin Richard II to become the first king from the House of Lancaster. He had to spend a lot of time fighting rebellions to keep his crown safe.",
+  'henry-v': "Henry V is remembered as one of England's greatest warrior kings. He bravely led his small, tired army to a famous victory over the French at the Battle of Agincourt.",
+  'henry-vi': "Henry VI became king when he was just a tiny baby! He didn't like fighting and sometimes suffered from mental illness, which led to the battles known as the Wars of the Roses.",
+  'edward-iv': "Edward IV was a very tall and strong king who fought for the House of York. He won lots of battles during the Wars of the Roses to become the ruler of England.",
+  'edward-v': "Edward V was only 12 years old when he became king, but he was never crowned. He and his younger brother were sent to the Tower of London and mysteriously disappeared.",
+  'richard-iii': "Richard III was the last English king to die in battle. He lost his crown at the Battle of Bosworth. Many hundreds of years later, scientists found his skeleton buried under a car park in Leicester!",
+  'henry-vii': "Henry VII won the Battle of Bosworth to become king. To stop people fighting, he married a princess from the rival family and created the famous Tudor Rose, which is red and white.",
+  'henry-viii': "Henry VIII is famous for having six wives and changing the church in England. He broke with the Pope so he could remarry, and his rule changed religion, money, and power across the kingdom.",
+  'edward-vi': "Edward VI was Henry VIII's only surviving son. He became king when he was just 9 years old, but sadly he was often sick and died when he was only 15.",
+  'jane-grey': "Lady Jane Grey is often called the 'Nine Days' Queen'. She was Queen for just over a week before Mary I took the throne and sent her to the Tower of London.",
+  'mary-i': "Mary I was the first woman to be Queen of England in her own right. She is sometimes remembered as 'Bloody Mary' because she was very strict and punished people who did not follow her religion.",
+  'elizabeth-i': "Elizabeth I was a strong Tudor queen. People remember her for the defeat of the Spanish Armada, brave speeches, and a time when theatre and exploration grew. She never married, so she was called the Virgin Queen.",
+  'james-i': "James I was already King of Scotland when he became King of England too. He was king during the Gunpowder Plot, when Guy Fawkes tried to blow up Parliament with barrels of gunpowder!",
+  'charles-i': "Charles I argued so much with Parliament that it started the English Civil War. Parliament's army won the war, and Charles was the only English king to have his head chopped off.",
+  'charles-ii': "Charles II is called the 'Merry Monarch' because he loved parties and brought back Christmas and theatres after they were banned! He was king during the Great Fire of London.",
+  'james-ii': "James II wasn't very popular because he tried to change the country's religion. The people asked his daughter to take over instead, and he ran away to France without a fight.",
+  'william-iii': "William III came from Holland and was invited to take the English throne. He ruled equally alongside his wife, Mary II, which is the only time this has ever happened.",
+  'mary-ii': "Mary II ruled the country as an equal partner with her husband, William of Orange. She was known for being kind and very interested in building beautiful gardens and palaces.",
+  'anne': "Queen Anne had 17 children but sadly none lived to be adults. During her reign, England and Scotland officially joined together to become one big country called Great Britain.",
+  'george-i': "George I was a German prince who became the King of Great Britain. When he first arrived in London to be king, he couldn't speak very much English at all!",
+  'george-ii': "George II was the last British king to personally lead his soldiers into battle! He was also known to have a terrible temper and used to throw his wig across the room when he was angry.",
+  'george-iii': "George III was king for a very long time, including when America fought for its independence. Later in his life, he became very sick and people sometimes called him the 'Mad King'.",
+  'george-iv': "George IV loved eating, drinking, and spending lots of money on fancy clothes. He built the famous Royal Pavilion in Brighton, which looks exactly like an Indian palace.",
+  'william-iv': "William IV was known as the 'Sailor King' because he spent many years in the Royal Navy. He was a friendly king who hated showing off and didn't want a big, fancy coronation.",
+  'victoria': "Queen Victoria ruled for a very long time. Britain built railways, factories, and a huge empire during her reign. Many children learn about the Victorians because life, clothes, schools, and cities changed so much.",
+  'edward-vii': "Edward VII was Queen Victoria's eldest son, so he had to wait a very long time to become king! He loved sports, driving the first cars, and having fun.",
+  'george-v': "George V was king during the First World War. He changed his family's last name to 'Windsor' to sound more British, and was the very first king to talk on the radio at Christmas.",
+  'edward-viii': "Edward VIII was king for less than a year. He gave up the throne because he wanted to marry Wallis Simpson. That surprising choice changed the royal family and made his brother George VI king instead.",
+  'george-vi': "George VI was Elizabeth II's father. Even though he had a stammer that made it hard for him to talk, he bravely gave speeches on the radio to cheer people up during the Second World War.",
+  'elizabeth-ii': "Elizabeth II was queen for 70 years, longer than any other British monarch. She met many prime ministers, saw huge changes in the world, and became well known for duty, calmness, and her corgis.",
+  'charles-iii': "Charles III became king in 2022 after Queen Elizabeth II died. Before that, he was Prince of Wales for many years. Children may know him for his coronation and for caring about nature and old buildings.",
+}
+
+export function getExactReignLabel(monarchId: string, reignIndex: number, reign: ReignRange): string {
+  return reignExactDates[monarchId]?.[reignIndex] ?? reign.label
+}
+
+export function getMonarchExactReigns(monarch: Monarch): string[] {
+  return monarch.reigns.map((reign, reignIndex) => getExactReignLabel(monarch.id, reignIndex, reign))
+}
+
+export function getMonarchBio(monarch: Monarch): string {
+  const override = bioOverrides[monarch.id]
+  if (override) return override
+
+  const shortHouse = monarch.house.replace(/^House of /, '')
+  const keyEvents = monarch.events
+    .slice(0, 2)
+    .map((event) => event.label)
+    .join(' and ')
+
+  return `${monarch.name} was a ruler from the ${shortHouse} family. Children often remember this reign for ${keyEvents}. `
+}
