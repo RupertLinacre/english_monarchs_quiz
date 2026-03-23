@@ -94,6 +94,82 @@ const bioOverrides: Record<string, string> = {
   'charles-iii': "Charles III became king in 2022 after Queen Elizabeth II died. Before that, he was Prince of Wales for many years. Children may know him for his coronation and for caring about nature and old buildings.",
 }
 
+const eventSummaryOverrides: Record<string, string> = {
+  hastings: 'A decisive invasion battle that changed who ruled England.',
+  domesday: 'A huge survey recorded land, wealth, and who owned what.',
+  'new-forest': 'A sudden death in a hunting accident ended the reign.',
+  'white-ship': 'A succession crisis followed a famous shipwreck.',
+  treasury: 'Royal finance records became more systematic and detailed.',
+  anarchy: 'A civil war over the crown made the kingdom unstable.',
+  'lady-of-english': 'A rival claimant briefly took control in part of the kingdom.',
+  becket: 'A clash between crown and church ended in shocking violence.',
+  ireland: 'Royal power was asserted across the Irish Sea.',
+  'third-crusade': 'This reign is closely linked with crusading warfare abroad.',
+  lionheart: 'The ruler gained a lasting warrior reputation.',
+  'magna-carta': 'The crown was forced to accept limits on its power.',
+  'barons-war': 'Powerful nobles openly fought the ruler.',
+  montfort: 'A landmark assembly helped shape the future of Parliament.',
+  'westminster-abbey': 'A major royal church was rebuilt on a grand scale.',
+  wales: 'The conquest of Wales reshaped rule there.',
+  'model-parliament': 'A famous parliament set a pattern for later representation.',
+  bannockburn: 'A major defeat to Scotland defined the reign.',
+  'hundred-years-war': 'Big victories in France became central to the reign’s memory.',
+  'black-death': 'Plague transformed life across the kingdom.',
+  'peasants-revolt': 'A major popular uprising reached London.',
+  deposed: 'The ruler was overthrown and lost the crown.',
+  deposition: 'The crown was taken from the previous ruler.',
+  agincourt: 'A famous battlefield victory against France shaped the reign.',
+  troyes: 'A treaty transformed the royal claim in France.',
+  'wars-of-roses': 'Dynastic conflict broke out during this reign.',
+  madness: 'A collapse in the ruler’s health destabilised government.',
+  towton: 'A decisive battle helped win the throne.',
+  tewkesbury: 'A return to power was secured in battle.',
+  'princes-tower': 'This reign is tied to the mystery of the Princes in the Tower.',
+  'princes-r3': 'The fate of the princes remains the most famous question from this reign.',
+  bosworth: 'Defeat in battle ended the old dynasty.',
+  'bosworth-h7': 'Victory in battle created a new dynasty.',
+  'tudor-rose': 'A royal marriage was used to unite rival houses.',
+  'break-rome': 'The church in England broke away from papal authority.',
+  dissolution: 'Monasteries were closed and their property was seized.',
+  'prayer-book': 'Religious worship was reshaped by a new prayer book.',
+  somerset: 'Rebellion showed how tense religious and economic change had become.',
+  'nine-days': 'The reign lasted only a few days.',
+  'bloody-mary': 'Religious persecution became the defining issue of the reign.',
+  calais: 'England lost its last possession in France.',
+  armada: 'A Spanish invasion fleet was defeated.',
+  'mary-queen-scots': 'A rival claimant was executed after years of tension.',
+  gunpowder: 'A plot targeted king and Parliament with explosives.',
+  'king-james-bible': 'A famous English Bible translation was published.',
+  'civil-war': 'War broke out between crown and Parliament.',
+  'execution-c1': 'The ruler was executed after civil war.',
+  restoration: 'The monarchy returned after years without a king.',
+  'great-fire': 'A catastrophic fire destroyed much of London.',
+  'glorious-revolution': 'The ruler was driven out in a constitutional crisis.',
+  'glorious-revolution-w3': 'A change of ruler followed the Glorious Revolution.',
+  boyne: 'A major battle in Ireland secured the settlement.',
+  'joint-rule': 'The crown was held jointly by two rulers.',
+  union: 'England and Scotland were united as Great Britain.',
+  marlborough: 'Continental victories made Britain a major military power.',
+  'jacobite-1715': 'A rising tried to restore the previous royal line.',
+  'jacobite-1745': 'Another Jacobite challenge nearly overturned the regime.',
+  'american-independence': 'Britain lost the American colonies.',
+  napoleon: 'The Napoleonic Wars ended with victory at Waterloo.',
+  regency: 'A prince ruled in place of the monarch during illness.',
+  'reform-act': 'Parliamentary reform widened political representation.',
+  'great-exhibition': 'Industrial power and empire were put on display.',
+  jubilee: 'Public celebration focused on the extraordinary length of the reign.',
+  'edwardian-age': 'The reign gave its name to a distinct new era.',
+  'first-world-war': 'The monarchy faced the pressures of total war.',
+  'windsor-name': 'The royal house adopted the name Windsor.',
+  abdication: 'The ruler gave up the crown for marriage.',
+  'second-world-war': 'The monarchy became a symbol during another world war.',
+  blitz: 'Bombing raids shaped the wartime home front.',
+  'televised-coronation': 'A coronation reached millions through television.',
+  'platinum-jubilee': 'The reign reached an unprecedented 70 years.',
+  'accession-c3': 'The throne passed to a new ruler after a long reign ended.',
+  'coronation-2023': 'A modern coronation renewed ancient ceremony.',
+}
+
 export function getExactReignLabel(monarchId: string, reignIndex: number, reign: ReignRange): string {
   return reignExactDates[monarchId]?.[reignIndex] ?? reign.label
 }
@@ -113,4 +189,8 @@ export function getMonarchBio(monarch: Monarch): string {
     .join(' and ')
 
   return `${monarch.name} was a ruler from the ${shortHouse} family. Children often remember this reign for ${keyEvents}. `
+}
+
+export function getEventSummary(_monarchId: string, eventId: string, label: string): string {
+  return eventSummaryOverrides[eventId] ?? `${label} is one of the best-known events from this reign.`
 }

@@ -1,5 +1,5 @@
 import './style.css'
-import { getExactReignLabel, getMonarchBio, getMonarchExactReigns } from './content'
+import { getEventSummary, getExactReignLabel, getMonarchBio, getMonarchExactReigns } from './content'
 import { housePeriods, monarchs, WORLD_END_YEAR, WORLD_START_YEAR, type HousePeriod, type Monarch, type ReignRange } from './data'
 
 type ViewState = {
@@ -25,18 +25,29 @@ type EventPlacement = {
   lane: number
   showLabel: boolean
   monarchName: string
+  isCurrent: boolean
 }
 
 type AppState = {
-  discovered: Set<string>
+  answered: Set<string>
+  completed: Set<string>
+  skipped: Set<string>
   inputValue: string
   status: string
   startedAt: number
   completedAt: number | null
+  revealedAll: boolean
   view: ViewState
   recentMonarchId: string | null
   selectedMonarchId: string | null
   portraitUrls: Map<string, string>
+  questionOrder: string[]
+  currentMonarchId: string | null
+  hintVisible: boolean
+  awaitingNextQuestion: boolean
+  resultKind: 'correct' | 'skipped' | null
+  transitionMessage: string
+  revealAnimationMonarchId: string | null
 }
 
 const WORLD_SPAN = WORLD_END_YEAR - WORLD_START_YEAR
@@ -123,17 +134,30 @@ const aliasMap = buildAliasMap(monarchs)
 const monarchById = new Map(monarchs.map((monarch) => [monarch.id, monarch]))
 const houseColorMap = new Map(housePeriods.map((house) => [house.label, house.color]))
 const monarchLanes = assignMonarchLanes(monarchs)
+const questionOrder = shuffle(monarchs.map((monarch) => monarch.id))
+const initialQuestionId = questionOrder[0] ?? null
+const initialQuestionMonarch = initialQuestionId ? monarchById.get(initialQuestionId) ?? null : null
 
 const state: AppState = {
-  discovered: new Set(),
+  answered: new Set(),
+  completed: new Set(),
+  skipped: new Set(),
   inputValue: '',
-  status: 'Type a monarch to reveal them on the timeline.',
+  status: 'Study the highlighted reign and its clue notes, then type the monarch.',
   startedAt: Date.now(),
   completedAt: null,
-  view: { start: WORLD_START_YEAR, end: WORLD_END_YEAR },
+  revealedAll: false,
+  view: initialQuestionMonarch ? getFocusedView(initialQuestionMonarch) : { start: WORLD_START_YEAR, end: WORLD_END_YEAR },
   recentMonarchId: null,
   selectedMonarchId: null,
   portraitUrls: new Map(),
+  questionOrder,
+  currentMonarchId: initialQuestionId,
+  hintVisible: false,
+  awaitingNextQuestion: false,
+  resultKind: null,
+  transitionMessage: '',
+  revealAnimationMonarchId: null,
 }
 
 const app = document.querySelector<HTMLDivElement>('#app')
@@ -147,11 +171,11 @@ app.innerHTML = `
     <section class="hero">
       <div class="hero__copy">
         <p class="eyebrow">1050 to today</p>
-        <h1>Monarchs of England, Great Britain, and the United Kingdom</h1>
+        <h1>Name the monarch from the reign</h1>
       </div>
       <div class="summary-grid">
         <article class="stat-card">
-          <span class="stat-card__label">Progress</span>
+          <span class="stat-card__label">Score</span>
           <strong id="progress-value" class="stat-card__value">0 / ${monarchs.length}</strong>
         </article>
         <article class="stat-card">
@@ -165,9 +189,11 @@ app.innerHTML = `
       </div>
     </section>
 
+    <section id="quiz-panel" class="quiz-panel" aria-live="polite"></section>
+
     <section class="controls">
       <label class="answer-box" for="answer-input">
-        <span class="answer-box__label">Answer box</span>
+        <span class="answer-box__label">Your answer</span>
         <input
           id="answer-input"
           class="answer-box__input"
@@ -175,14 +201,12 @@ app.innerHTML = `
           autocomplete="off"
           autocapitalize="words"
           spellcheck="false"
-          placeholder="Type a monarch name..."
+          placeholder="Type the monarch name..."
         />
       </label>
       <div class="control-cluster">
-        <button id="reveal-all" class="control-button" type="button">Complete quiz</button>
-        <button id="zoom-out" class="control-button" type="button">Zoom out</button>
-        <button id="zoom-in" class="control-button" type="button">Zoom in</button>
-        <button id="zoom-reset" class="control-button control-button--strong" type="button">Reset view</button>
+        <button id="reveal-all" class="control-button" type="button">Reveal all answers</button>
+        <button id="zoom-reset" class="control-button control-button--strong" type="button">Refocus clue</button>
       </div>
     </section>
 
@@ -207,6 +231,7 @@ app.innerHTML = `
   </main>
 `
 
+const quizPanel = document.querySelector<HTMLElement>('#quiz-panel')
 const answerInput = document.querySelector<HTMLInputElement>('#answer-input')
 const progressValue = document.querySelector<HTMLElement>('#progress-value')
 const timerValue = document.querySelector<HTMLElement>('#timer-value')
@@ -215,14 +240,24 @@ const statusText = document.querySelector<HTMLElement>('#status-text')
 const timelineViewport = document.querySelector<HTMLDivElement>('#timeline-viewport')
 const monarchInfo = document.querySelector<HTMLElement>('#monarch-info')
 const revealAllButton = document.querySelector<HTMLButtonElement>('#reveal-all')
-const zoomInButton = document.querySelector<HTMLButtonElement>('#zoom-in')
-const zoomOutButton = document.querySelector<HTMLButtonElement>('#zoom-out')
 const zoomResetButton = document.querySelector<HTMLButtonElement>('#zoom-reset')
 
-if (!answerInput || !progressValue || !timerValue || !viewValue || !statusText || !timelineViewport || !monarchInfo || !revealAllButton || !zoomInButton || !zoomOutButton || !zoomResetButton) {
+if (
+  !quizPanel ||
+  !answerInput ||
+  !progressValue ||
+  !timerValue ||
+  !viewValue ||
+  !statusText ||
+  !timelineViewport ||
+  !monarchInfo ||
+  !revealAllButton ||
+  !zoomResetButton
+) {
   throw new Error('Failed to bind required UI elements.')
 }
 
+const boundQuizPanel = quizPanel
 const boundAnswerInput = answerInput
 const boundProgressValue = progressValue
 const boundTimerValue = timerValue
@@ -231,29 +266,30 @@ const boundStatusText = statusText
 const boundTimelineViewport = timelineViewport
 const boundMonarchInfo = monarchInfo
 const boundRevealAllButton = revealAllButton
-const boundZoomInButton = zoomInButton
-const boundZoomOutButton = zoomOutButton
 const boundZoomResetButton = zoomResetButton
 
 boundAnswerInput.addEventListener('input', (event) => {
   state.inputValue = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.value : ''
-  tryResolveAnswer()
-  render()
+  if (tryAcceptCurrentAnswer()) return
+})
+
+boundAnswerInput.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return
+  event.preventDefault()
+  submitCurrentGuess()
 })
 
 boundRevealAllButton.addEventListener('click', () => {
   revealAllMonarchs()
 })
 
-boundZoomInButton.addEventListener('click', () => zoomAround(0.7))
-boundZoomOutButton.addEventListener('click', () => zoomAround(1.35))
 boundZoomResetButton.addEventListener('click', () => {
-  state.status = 'Timeline reset to the full 1066 to present span.'
-  animateViewTo(WORLD_START_YEAR, WORLD_END_YEAR)
+  state.status = state.currentMonarchId ? 'Refocused on the highlighted reign.' : 'Showing the full timeline for review.'
+  focusCurrentQuestion(true)
 })
 
 bindViewportInteractions(boundTimelineViewport)
-bindMonarchSelection(boundTimelineViewport)
+bindPanelInteractions(boundQuizPanel, boundMonarchInfo, boundTimelineViewport)
 
 window.setInterval(() => {
   renderSummary()
@@ -267,19 +303,161 @@ boundAnswerInput.focus()
 function render(): void {
   renderSummary()
   boundStatusText.textContent = state.status
+  boundAnswerInput.value = state.inputValue
+  boundAnswerInput.disabled = !state.currentMonarchId || state.awaitingNextQuestion
+  boundAnswerInput.placeholder = !state.currentMonarchId ? 'Quiz finished' : state.awaitingNextQuestion ? 'Click next question...' : 'Type the monarch name...'
+  boundQuizPanel.innerHTML = renderQuestionPanel()
   boundTimelineViewport.innerHTML = renderTimeline()
   boundMonarchInfo.innerHTML = renderMonarchInfo()
 }
 
 function renderSummary(): void {
-  const foundCount = state.discovered.size
-  boundProgressValue.textContent = `${foundCount} / ${monarchs.length}`
+  const correctCount = state.answered.size
+  const skippedCount = state.skipped.size
+  boundProgressValue.textContent =
+    skippedCount > 0
+      ? `${correctCount} / ${monarchs.length} correct · ${skippedCount} skipped`
+      : `${correctCount} / ${monarchs.length} correct`
 
   const endTime = state.completedAt ?? Date.now()
   boundTimerValue.textContent = formatElapsed(endTime - state.startedAt)
 
   const span = state.view.end - state.view.start
   boundViewValue.textContent = `${formatYears(span)} visible`
+}
+
+function renderQuestionPanel(): string {
+  const currentMonarch = state.currentMonarchId ? monarchById.get(state.currentMonarchId) ?? null : null
+  const nextQuestionId = getNextQuestionId()
+
+  if (!currentMonarch) {
+    const totalTime = state.completedAt ? formatElapsed(state.completedAt - state.startedAt) : formatElapsed(Date.now() - state.startedAt)
+    const title = state.revealedAll ? 'Review mode' : 'Quiz complete'
+    const scoreSummary =
+      state.skipped.size > 0
+        ? `${state.answered.size} correct and ${state.skipped.size} skipped`
+        : `${state.answered.size} correct`
+    const body = state.revealedAll
+      ? `All ${monarchs.length} monarchs have been revealed for review. Use the timeline and review card below to revise the sequence.`
+      : `Finished in ${totalTime}: ${scoreSummary}. Click any revealed reign or card to review it below.`
+
+    return `
+      <section class="quiz-panel__card quiz-panel__card--summary">
+        <p class="quiz-panel__eyebrow">${title}</p>
+        <h2>${body}</h2>
+      </section>
+    `
+  }
+
+  const questionNumber = state.completed.has(currentMonarch.id) ? state.completed.size : state.completed.size + 1
+  const exactReigns = getMonarchExactReigns(currentMonarch)
+  const portraitUrl = state.hintVisible ? state.portraitUrls.get(currentMonarch.id) : undefined
+  const resultBanner = state.awaitingNextQuestion
+    ? `
+      <div class="quiz-result quiz-result--${state.resultKind ?? 'skipped'}" role="status" aria-live="polite">
+        <span class="quiz-result__icon" aria-hidden="true">${state.resultKind === 'correct' ? '✓' : 'Skip'}</span>
+        <div class="quiz-result__text">
+          <strong>${state.resultKind === 'correct' ? 'Correct' : 'Skipped'}</strong>
+          <span>${state.transitionMessage}</span>
+        </div>
+      </div>
+    `
+    : ''
+  const eventNotes = currentMonarch.events
+    .slice()
+    .sort((left, right) => left.year - right.year)
+    .map((event) => ({
+      year: event.year,
+      label: event.label,
+      note: getEventSummary(currentMonarch.id, event.id, event.label),
+    }))
+
+  return `
+    <section class="quiz-panel__card">
+      ${resultBanner}
+      <div class="quiz-panel__header">
+        <div>
+          <p class="quiz-panel__eyebrow">Question ${questionNumber} of ${monarchs.length}</p>
+          <h2>Who ruled this reign?</h2>
+          <p class="quiz-panel__prompt">${
+            state.awaitingNextQuestion
+              ? 'Review the revealed monarch, then move on when you are ready.'
+              : 'Use the highlighted span on the timeline, then match it to these reign clues.'
+          }</p>
+        </div>
+        <div class="quiz-panel__actions">
+          ${
+            state.awaitingNextQuestion
+              ? `
+                <button
+                  class="control-button control-button--strong"
+                  type="button"
+                  data-next-question="true"
+                >
+                  ${nextQuestionId ? 'Next question' : 'Finish quiz'}
+                </button>
+              `
+              : ''
+          }
+          <button
+            class="control-button"
+            type="button"
+            data-skip-question="true"
+            ${state.awaitingNextQuestion ? 'disabled' : ''}
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+
+      <div class="quiz-panel__grid">
+        <div class="quiz-panel__details">
+          <div class="quiz-panel__section">
+            <span class="quiz-panel__label">Highlighted reign</span>
+            <div class="quiz-panel__chips">
+              ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
+            </div>
+          </div>
+
+          <div class="quiz-panel__section">
+            <span class="quiz-panel__label">What happened in this reign</span>
+            <ul class="quiz-panel__notes">
+              ${
+                eventNotes.length > 0
+                  ? eventNotes
+                      .map(
+                        (event) => `
+                          <li class="quiz-panel__note">
+                            <strong>${event.year}</strong>
+                            <div>
+                              <span>${event.label}</span>
+                              <small>${event.note}</small>
+                            </div>
+                          </li>
+                        `,
+                      )
+                      .join('')
+                  : '<li class="quiz-panel__note quiz-panel__note--empty"><span>No extra notes recorded for this reign.</span></li>'
+              }
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="quiz-panel__hint ${state.hintVisible ? 'quiz-panel__hint--visible' : ''} ${!state.hintVisible && !state.awaitingNextQuestion ? 'quiz-panel__hint--clickable' : ''}"
+          ${!state.hintVisible && !state.awaitingNextQuestion ? 'data-toggle-hint="true" role="button" tabindex="0" aria-label="Reveal the portrait hint"' : ''}
+        >
+          ${
+            state.hintVisible
+              ? portraitUrl
+                ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
+                : '<div class="quiz-panel__hint-fallback">Portrait hint unavailable for this reign.</div>'
+              : '<div class="quiz-panel__hint-placeholder">Reveal the portrait if you need an extra clue.</div>'
+          }
+        </div>
+      </div>
+    </section>
+  `
 }
 
 function renderTimeline(): string {
@@ -300,8 +478,9 @@ function renderTimeline(): string {
       </div>
       <div class="timeline-stage__events">${eventsHtml}</div>
       <div class="timeline-stage__legend">
-        <span><i class="legend-swatch legend-swatch--found"></i> Answered monarch</span>
-        <span><i class="legend-swatch legend-swatch--ghost"></i> Unrevealed reign</span>
+        <span><i class="legend-swatch legend-swatch--target"></i> Current clue</span>
+        <span><i class="legend-swatch legend-swatch--found"></i> Revealed monarch</span>
+        <span><i class="legend-swatch legend-swatch--ghost"></i> Other reigns</span>
         <span><i class="legend-dot"></i> Key event</span>
         <span>${Math.round(viewSpan)} year window</span>
       </div>
@@ -347,24 +526,27 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
   const metrics = getMetrics(reign.start, reign.end)
   if (!metrics) return ''
 
-  const revealed = state.discovered.has(monarch.id)
+  const revealed = state.completed.has(monarch.id)
+  const target = state.currentMonarchId === monarch.id && !revealed
   const recent = state.recentMonarchId === monarch.id
   const houseColor = houseColorMap.get(monarch.house) ?? '#6c4b3a'
   const top = 344 + lane * 16
   const exactDates = getExactReignLabel(monarch.id, reignIndex, reign)
-  const accessibleLabel = revealed ? `${monarch.name}: ${exactDates}` : `${exactDates}. Shift-click to reveal this monarch.`
+  const stateClass = revealed ? 'reign-segment--found' : target ? 'reign-segment--target' : 'reign-segment--ghost'
+  const accessibleLabel = revealed ? `${monarch.name}: ${exactDates}` : target ? `Current clue: ${exactDates}` : exactDates
+  const tooltipTitle = revealed ? `${monarch.name}: ${exactDates}` : target ? `Current clue · ${exactDates}` : exactDates
 
   return `
     <div
-      class="reign-segment ${revealed ? 'reign-segment--found' : 'reign-segment--ghost'} ${recent ? 'reign-segment--recent' : ''}"
+      class="reign-segment ${stateClass} ${recent ? 'reign-segment--recent' : ''}"
       style="left:${metrics.leftPct}%; width:${Math.max(metrics.widthPct, 0.35)}%; top:${top}px; --segment-color:${houseColor};"
-      title="${revealed ? `${monarch.name}: ${exactDates}` : exactDates}"
+      title="${tooltipTitle}"
       tabindex="0"
       aria-label="${accessibleLabel}"
       data-monarch-id="${monarch.id}"
     >
       <span class="reign-segment__tooltip">
-        ${revealed ? `<strong>${monarch.name}</strong>` : ''}
+        ${revealed ? `<strong>${monarch.name}</strong>` : target ? '<strong>Current clue</strong>' : ''}
         <span>${exactDates}</span>
       </span>
     </div>
@@ -373,7 +555,7 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
 
 function renderMonarchCards(items: Monarch[]): string {
   const visibleFound = items
-    .filter((monarch) => state.discovered.has(monarch.id))
+    .filter((monarch) => state.completed.has(monarch.id))
     .map((monarch) => {
       const metrics = getBestVisibleCardMetrics(monarch)
       if (!metrics) return null
@@ -399,6 +581,7 @@ function renderMonarchCards(items: Monarch[]): string {
     .map((placement) => {
       const imageUrl = state.portraitUrls.get(placement.monarch.id)
       const recent = placement.monarch.id === state.recentMonarchId
+      const revealAnimation = placement.monarch.id === state.revealAnimationMonarchId
       const top = 14 + placement.lane * 34 + placement.stack * 116
       const width = placement.mode === 'full' ? 148 : placement.mode === 'compact' ? 114 : 44
       const imageVisible = placement.mode !== 'badge'
@@ -406,7 +589,7 @@ function renderMonarchCards(items: Monarch[]): string {
 
       return `
         <article
-          class="monarch-card monarch-card--${placement.mode} ${recent ? 'monarch-card--recent' : ''}"
+          class="monarch-card monarch-card--${placement.mode} ${recent ? 'monarch-card--recent' : ''} ${revealAnimation ? 'monarch-card--reveal' : ''}"
           style="left:${placement.center}%; top:${top}px; width:${width}px;"
           title="${placement.monarch.name}: ${placement.monarch.dateLabel}"
           tabindex="0"
@@ -440,11 +623,11 @@ function renderMonarchCards(items: Monarch[]): string {
 function renderMonarchInfo(): string {
   const monarch = state.selectedMonarchId ? monarchById.get(state.selectedMonarchId) : null
 
-  if (!monarch || !state.discovered.has(monarch.id)) {
+  if (!monarch || !state.completed.has(monarch.id)) {
     return `
       <div class="monarch-info__empty">
-        <strong>Monarch details</strong>
-        <span>Click a revealed monarch on the timeline to open a larger portrait and a short description here.</span>
+        <strong>Revealed monarch review</strong>
+        <span>Complete a clue, or click any revealed reign on the timeline to open a larger portrait and summary here.</span>
       </div>
     `
   }
@@ -503,6 +686,7 @@ function renderEvents(items: Monarch[]): string {
       label: event.label,
       detail: getEventExplanation(event.id, event.label, monarch.name, event.detail),
       monarchName: monarch.name,
+      isCurrent: monarch.id === state.currentMonarchId,
     })),
   )
 
@@ -514,7 +698,7 @@ function renderEvents(items: Monarch[]): string {
       const top = 24 + event.lane * 44
       return `
         <div
-          class="timeline-event ${event.showLabel ? '' : 'timeline-event--dot-only'}"
+          class="timeline-event ${event.showLabel ? '' : 'timeline-event--dot-only'} ${event.isCurrent ? 'timeline-event--current' : ''}"
           style="left:${x}%; top:${top}px;"
           title="${event.year}: ${event.label} (${event.monarchName})"
           tabindex="0"
@@ -541,60 +725,171 @@ function renderEvents(items: Monarch[]): string {
     .join('')
 }
 
-function tryResolveAnswer(): void {
+function tryAcceptCurrentAnswer(): boolean {
+  if (state.awaitingNextQuestion) return false
   const normalized = normalizeAnswer(state.inputValue)
-  if (!normalized) return
+  if (!normalized || !state.currentMonarchId) return false
+  if (aliasMap.get(normalized) !== state.currentMonarchId) return false
+  return completeCurrentQuestion('correct')
+}
+
+function submitCurrentGuess(): void {
+  if (!state.currentMonarchId || state.awaitingNextQuestion) return
+
+  const normalized = normalizeAnswer(state.inputValue)
+  if (!normalized) {
+    state.status = 'Type a monarch name before submitting.'
+    render()
+    return
+  }
 
   const matchId = aliasMap.get(normalized)
-  if (!matchId) return
-  revealMonarch(matchId, 'answer')
+  if (matchId === state.currentMonarchId) {
+    completeCurrentQuestion('correct')
+    return
+  }
+
+  if (matchId) {
+    const wrongMonarch = monarchById.get(matchId)
+    state.status = `${wrongMonarch?.name ?? 'That monarch'} does not match the highlighted reign.`
+  } else {
+    state.status = 'No match for that answer yet. Try the monarch name plus numeral, like "Henry VIII".'
+  }
+
+  render()
+}
+
+function completeCurrentQuestion(outcome: 'correct' | 'skipped'): boolean {
+  const monarchId = state.currentMonarchId
+  if (!monarchId || state.awaitingNextQuestion) return false
+
+  const monarch = monarchById.get(monarchId)
+  if (!monarch) return false
+
+  state.completed.add(monarchId)
+  if (outcome === 'correct') {
+    state.answered.add(monarchId)
+    state.skipped.delete(monarchId)
+  } else {
+    state.skipped.add(monarchId)
+  }
+  state.recentMonarchId = monarchId
+  state.revealAnimationMonarchId = monarchId
+  state.selectedMonarchId = monarchId
+  state.inputValue = ''
+  state.hintVisible = false
+  state.revealedAll = false
+  state.awaitingNextQuestion = true
+  state.resultKind = outcome
+  boundAnswerInput.value = ''
+  state.transitionMessage =
+    outcome === 'correct'
+      ? `${monarch.name} is now shown on the timeline and opened below. Click Next question to move on.`
+      : `The answer was ${monarch.name}. It is now shown on the timeline and opened below. Click Next question to move on.`
+  state.status = state.transitionMessage
+  render()
+  boundAnswerInput.blur()
+  return true
 }
 
 function revealAllMonarchs(): void {
-  state.discovered = new Set(monarchs.map((monarch) => monarch.id))
+  state.completed = new Set(monarchs.map((monarch) => monarch.id))
   state.recentMonarchId = null
+  state.revealAnimationMonarchId = null
+  state.selectedMonarchId = null
+  state.currentMonarchId = null
+  state.hintVisible = false
+  state.inputValue = ''
+  state.revealedAll = true
+  state.awaitingNextQuestion = false
+  state.resultKind = null
+  state.transitionMessage = ''
 
   if (!state.completedAt) {
     state.completedAt = Date.now()
   }
 
-  state.status = `All ${monarchs.length} monarchs revealed for timeline review.`
+  state.status = `All ${monarchs.length} monarchs revealed for review.`
+  animateViewTo(WORLD_START_YEAR, WORLD_END_YEAR)
+}
 
+function getNextQuestionId(): string | null {
+  return state.questionOrder.find((monarchId) => !state.completed.has(monarchId)) ?? null
+}
+
+function skipCurrentQuestion(): void {
+  completeCurrentQuestion('skipped')
+}
+
+function chooseQuestion(monarchId: string): void {
+  if (state.completed.has(monarchId)) return
+  if (state.currentMonarchId === monarchId && !state.awaitingNextQuestion) return
+
+  state.currentMonarchId = monarchId
+  state.awaitingNextQuestion = false
+  state.resultKind = null
+  state.transitionMessage = ''
+  state.revealAnimationMonarchId = null
+  state.selectedMonarchId = null
+  state.inputValue = ''
+  state.hintVisible = false
+  state.status = 'Question changed. Study the highlighted reign and type the monarch.'
   render()
+  boundAnswerInput.focus()
 }
 
-function revealMonarch(monarchId: string, source: 'answer' | 'cheat'): void {
-  if (state.discovered.has(monarchId)) return
+function goToNextQuestion(): void {
+  if (!state.awaitingNextQuestion) return
 
-  const monarch = monarchById.get(monarchId)
-  if (!monarch) return
+  state.awaitingNextQuestion = false
+  state.resultKind = null
+  state.transitionMessage = ''
+  state.revealAnimationMonarchId = null
+  state.selectedMonarchId = null
 
-  state.discovered.add(monarchId)
-  state.recentMonarchId = monarchId
-  state.selectedMonarchId = monarchId
-
-  if (source === 'answer') {
-    state.status = `${monarch.name} accepted. ${state.discovered.size} of ${monarchs.length} found.`
-    state.inputValue = ''
-    boundAnswerInput.value = ''
-  } else {
-    state.status = `${monarch.name} revealed by cheat. ${state.discovered.size} of ${monarchs.length} found.`
-  }
-
-  zoomToMonarch(monarch)
-
-  if (state.discovered.size === monarchs.length) {
+  const nextQuestionId = getNextQuestionId()
+  if (!nextQuestionId) {
+    state.currentMonarchId = null
     state.completedAt = Date.now()
-    state.status = `Complete in ${formatElapsed(state.completedAt - state.startedAt)}. All ${monarchs.length} monarchs revealed.`
+    state.status =
+      state.skipped.size > 0
+        ? `Complete in ${formatElapsed(state.completedAt - state.startedAt)}. ${state.answered.size} correct, ${state.skipped.size} skipped.`
+        : `Complete in ${formatElapsed(state.completedAt - state.startedAt)}. All ${state.answered.size} answered correctly.`
+    render()
+    return
+  }
+
+  state.currentMonarchId = nextQuestionId
+  state.status = 'Study the highlighted reign and type the monarch.'
+  render()
+  focusCurrentQuestion(true, 1100)
+  boundAnswerInput.focus()
+}
+
+function focusCurrentQuestion(animate: boolean, duration = 520): void {
+  const monarch = state.currentMonarchId ? monarchById.get(state.currentMonarchId) ?? null : null
+
+  if (!monarch) {
+    if (animate) {
+      animateViewTo(WORLD_START_YEAR, WORLD_END_YEAR, duration)
+    } else {
+      setView(WORLD_START_YEAR, WORLD_END_YEAR)
+    }
+    return
+  }
+
+  const focusedView = getFocusedView(monarch)
+  if (animate) {
+    animateViewTo(focusedView.start, focusedView.end, duration)
+  } else {
+    setView(focusedView.start, focusedView.end)
   }
 }
 
-function zoomToMonarch(monarch: Monarch): void {
+function getFocusedView(monarch: Monarch): ViewState {
   const start = Math.min(...monarch.reigns.map((reign) => reign.start))
   const end = Math.max(...monarch.reigns.map((reign) => reign.end))
-  const span = clamp((end - start) * 2.6, MIN_VIEW_SPAN, 90)
-  const center = (start + end) / 2
-  animateViewTo(center - span / 2, center + span / 2)
+  return sanitizeView(start - 50, end + 50)
 }
 
 function zoomAround(factor: number, focalPoint = 0.5): void {
@@ -605,11 +900,10 @@ function zoomAround(factor: number, focalPoint = 0.5): void {
   setView(nextStart, nextStart + nextSpan)
 }
 
-function animateViewTo(start: number, end: number): void {
+function animateViewTo(start: number, end: number, duration = 520): void {
   const from = { ...state.view }
   const target = sanitizeView(start, end)
   const startedAt = performance.now()
-  const duration = 520
 
   const step = (now: number) => {
     const progress = clamp((now - startedAt) / duration, 0, 1)
@@ -706,7 +1000,7 @@ function resolveCardCollisions(
           break
         }
 
-        mode = downgradeMode(mode, candidate.monarch.id === state.recentMonarchId)
+        mode = downgradeMode(mode)
       }
     }
   }
@@ -714,9 +1008,9 @@ function resolveCardCollisions(
   return resolved
 }
 
-function downgradeMode(mode: CardMode, isRecent: boolean): CardMode | null {
+function downgradeMode(mode: CardMode): CardMode | null {
   if (mode === 'full') return 'compact'
-  if (mode === 'compact') return isRecent ? 'badge' : 'badge'
+  if (mode === 'compact') return 'badge'
   return null
 }
 
@@ -745,7 +1039,7 @@ function getBestVisibleCardMetrics(monarch: Monarch): { leftPct: number; widthPc
 }
 
 function placeEvents(
-  events: Array<{ id: string; year: number; label: string; detail?: string; monarchName: string }>,
+  events: Array<{ id: string; year: number; label: string; detail?: string; monarchName: string; isCurrent: boolean }>,
 ): EventPlacement[] {
   const visible = events
     .filter((event) => event.year >= state.view.start && event.year <= state.view.end)
@@ -781,6 +1075,7 @@ function placeEvents(
       lane,
       showLabel,
       monarchName: event.monarchName,
+      isCurrent: event.isCurrent,
     })
   }
 
@@ -948,60 +1243,83 @@ async function loadPortraitManifest(): Promise<void> {
   }
 }
 
-function bindMonarchSelection(viewport: HTMLDivElement): void {
-  viewport.addEventListener('click', (event) => {
-    const cardTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
-    if (cardTarget) {
-      const monarchId = cardTarget.dataset.monarchId
-      if (!monarchId || !state.discovered.has(monarchId)) return
+function bindPanelInteractions(quiz: HTMLElement, info: HTMLElement, viewport: HTMLDivElement): void {
+  quiz.addEventListener('click', (event) => {
+    const nextButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-next-question="true"]') : null
+    if (nextButton) {
+      goToNextQuestion()
+      return
+    }
 
-      state.selectedMonarchId = monarchId
+    const hintButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-toggle-hint="true"]') : null
+    if (hintButton && state.currentMonarchId) {
+      state.hintVisible = !state.hintVisible
       render()
       return
     }
 
-    const segmentTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.reign-segment[data-monarch-id]') : null
-    if (!segmentTarget || !event.shiftKey) return
+    const skipButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-skip-question="true"]') : null
+    if (skipButton) {
+      skipCurrentQuestion()
+    }
+  })
 
-    const monarchId = segmentTarget.dataset.monarchId
-    if (!monarchId || state.discovered.has(monarchId)) return
+  quiz.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
 
-    revealMonarch(monarchId, 'cheat')
+    const hintButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-toggle-hint="true"]') : null
+    if (!hintButton || !state.currentMonarchId) return
+
+    event.preventDefault()
+    state.hintVisible = true
+    render()
+  })
+
+  info.addEventListener('click', (event) => {
+    const closeButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-close-monarch-info="true"]') : null
+    if (!closeButton) return
+
+    state.selectedMonarchId = null
+    render()
+  })
+
+  viewport.addEventListener('click', (event) => {
+    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-monarch-id]') : null
+    if (!target) return
+
+    const monarchId = target.dataset.monarchId
+    if (!monarchId) return
+
+    if (target.classList.contains('reign-segment') && !state.completed.has(monarchId)) {
+      chooseQuestion(monarchId)
+      return
+    }
+
+    if (!state.completed.has(monarchId)) return
+
+    state.selectedMonarchId = monarchId
     render()
   })
 
   viewport.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
 
-    const cardTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.monarch-card[data-monarch-id]') : null
-    if (cardTarget) {
-      const monarchId = cardTarget.dataset.monarchId
-      if (!monarchId || !state.discovered.has(monarchId)) return
+    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-monarch-id]') : null
+    if (!target) return
 
+    const monarchId = target.dataset.monarchId
+    if (!monarchId) return
+
+    if (target.classList.contains('reign-segment') && !state.completed.has(monarchId)) {
       event.preventDefault()
-      state.selectedMonarchId = monarchId
-      render()
+      chooseQuestion(monarchId)
       return
     }
 
-    if (!event.shiftKey) return
-
-    const segmentTarget = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('.reign-segment[data-monarch-id]') : null
-    if (!segmentTarget) return
-
-    const monarchId = segmentTarget.dataset.monarchId
-    if (!monarchId || state.discovered.has(monarchId)) return
+    if (!state.completed.has(monarchId)) return
 
     event.preventDefault()
-    revealMonarch(monarchId, 'cheat')
-    render()
-  })
-
-  boundMonarchInfo.addEventListener('click', (event) => {
-    const closeButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-close-monarch-info="true"]') : null
-    if (!closeButton) return
-
-    state.selectedMonarchId = null
+    state.selectedMonarchId = monarchId
     render()
   })
 }
@@ -1024,7 +1342,7 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
   )
 
   viewport.addEventListener('pointerdown', (event) => {
-    const target = event.target instanceof HTMLElement ? event.target.closest('.monarch-card[data-monarch-id], .reign-segment[data-monarch-id]') : null
+    const target = event.target instanceof HTMLElement ? event.target.closest('[data-monarch-id]') : null
     if (target) {
       return
     }
@@ -1054,6 +1372,19 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
 
   viewport.addEventListener('pointerup', release)
   viewport.addEventListener('pointercancel', release)
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items]
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const current = copy[index]
+    copy[index] = copy[swapIndex]
+    copy[swapIndex] = current
+  }
+
+  return copy
 }
 
 function clamp(value: number, min: number, max: number): number {
