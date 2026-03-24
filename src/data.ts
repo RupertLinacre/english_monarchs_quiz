@@ -126,7 +126,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'HII',
     events: [
       { id: 'becket', year: 1170, label: 'Thomas Becket murdered' },
-      { id: 'ireland', year: 1171, label: 'Henry lands in Ireland' },
+      { id: 'ireland', year: 1171, label: 'Royal expedition to Ireland' },
     ],
   },
   {
@@ -140,7 +140,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'RI',
     events: [
       { id: 'third-crusade', year: 1191, label: 'Third Crusade' },
-      { id: 'lionheart', year: 1192, label: 'Richard the Lionheart legend grows' },
+      { id: 'lionheart', year: 1192, label: 'Warrior legend grows' },
     ],
   },
   {
@@ -221,7 +221,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'RII',
     events: [
       { id: 'peasants-revolt', year: 1381, label: "Peasants' Revolt" },
-      { id: 'deposed', year: 1399, label: 'Deposed by Henry Bolingbroke' },
+      { id: 'deposed', year: 1399, label: 'Deposed by a rival claimant' },
     ],
   },
   {
@@ -233,7 +233,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'Henry_IV_of_England',
     portraitFallback: 'HIV',
-    events: [{ id: 'deposition', year: 1399, label: 'Seizes the throne from Richard II' }],
+    events: [{ id: 'deposition', year: 1399, label: 'Seizes the throne from the previous king' }],
   },
   {
     id: 'henry-v',
@@ -263,7 +263,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'HVI',
     events: [
       { id: 'wars-of-roses', year: 1455, label: 'Wars of the Roses begin' },
-      { id: 'madness', year: 1453, label: 'Henry VI suffers mental collapse' },
+      { id: 'madness', year: 1453, label: 'Mental collapse destabilises rule' },
     ],
   },
   {
@@ -359,7 +359,7 @@ export const monarchs: Monarch[] = [
     aliases: ['jane grey', 'queen jane'],
     wikipediaTitle: 'Lady_Jane_Grey',
     portraitFallback: 'JG',
-    events: [{ id: 'nine-days', year: 1553, label: "Nine Days' Queen" }],
+    events: [{ id: 'nine-days', year: 1553, label: 'Reign lasts only nine days' }],
   },
   {
     id: 'mary-i',
@@ -400,7 +400,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'JI',
     events: [
       { id: 'gunpowder', year: 1605, label: 'Gunpowder Plot' },
-      { id: 'king-james-bible', year: 1611, label: 'King James Bible published' },
+      { id: 'king-james-bible', year: 1611, label: 'Famous English Bible published' },
     ],
   },
   {
@@ -414,7 +414,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'CI',
     events: [
       { id: 'civil-war', year: 1642, label: 'English Civil War begins' },
-      { id: 'execution-c1', year: 1649, label: 'Charles I executed' },
+      { id: 'execution-c1', year: 1649, label: 'The king is executed' },
     ],
   },
   {
@@ -465,7 +465,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'Mary_II_of_England',
     portraitFallback: 'MII',
-    events: [{ id: 'joint-rule', year: 1689, label: 'Joint rule with William III begins' }],
+    events: [{ id: 'joint-rule', year: 1689, label: 'Joint rule begins' }],
   },
   {
     id: 'anne',
@@ -526,7 +526,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'George_IV',
     portraitFallback: 'GIV',
-    events: [{ id: 'regency', year: 1811, label: 'Regency era begins' }],
+    events: [{ id: 'regency', year: 1811, label: 'A regent begins ruling' }],
   },
   {
     id: 'william-iv',
@@ -562,7 +562,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'Edward_VII',
     portraitFallback: 'EVII',
-    events: [{ id: 'edwardian-age', year: 1901, label: 'The Edwardian age begins' }],
+    events: [{ id: 'edwardian-age', year: 1901, label: 'A new cultural era begins' }],
   },
   {
     id: 'george-v',
@@ -575,7 +575,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'GV',
     events: [
       { id: 'first-world-war', year: 1914, label: 'Britain enters the First World War' },
-      { id: 'windsor-name', year: 1917, label: 'House of Windsor adopted' },
+      { id: 'windsor-name', year: 1917, label: 'Royal house adopts a new name' },
     ],
   },
   {
@@ -627,8 +627,8 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Charles_III',
     portraitFallback: 'CIII',
     events: [
-      { id: 'accession-c3', year: 2022, label: 'Succeeds Elizabeth II' },
-      { id: 'coronation-2023', year: 2023, label: 'Coronation of Charles III' },
+      { id: 'accession-c3', year: 2022, label: 'New reign begins after a long one ends' },
+      { id: 'coronation-2023', year: 2023, label: 'Modern coronation at Westminster Abbey' },
     ],
   },
 ]

@@ -46,7 +46,6 @@ type AppState = {
   hintVisible: boolean
   awaitingNextQuestion: boolean
   resultKind: 'correct' | 'skipped' | null
-  transitionMessage: string
   revealAnimationMonarchId: string | null
 }
 
@@ -55,79 +54,79 @@ const MIN_VIEW_SPAN = 8
 const eventLanes = 4
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin)
 const eventExplainers: Record<string, string> = {
-  hastings: 'William won a huge battle and became king of England.',
+  hastings: 'A huge invasion battle decided the crown.',
   domesday: 'This was a giant survey showing who owned land and animals.',
-  'new-forest': 'William II was shot while hunting in the forest.',
-  'white-ship': 'Henry’s son drowned, so the kingdom had no clear next king.',
+  'new-forest': 'The ruler was shot while hunting in the forest.',
+  'white-ship': 'The heir drowned, so the kingdom had no clear next king.',
   treasury: 'Royal money records were written down very carefully.',
   anarchy: 'People fought over who should rule, and life became unsafe.',
-  'lady-of-english': 'Matilda was accepted by some people as the ruler.',
-  becket: 'Thomas Becket was killed after arguing with Henry about power.',
-  ireland: 'Henry went to Ireland to show he was in charge there too.',
-  'third-crusade': 'Richard fought far away in a famous holy war.',
-  lionheart: 'People remembered Richard as a brave fighting king.',
+  'lady-of-english': 'A rival claimant was accepted by some people as ruler.',
+  becket: 'Thomas Becket was killed after arguing with the crown about power.',
+  ireland: 'The crown asserted its authority in Ireland.',
+  'third-crusade': 'The ruler spent much of the reign in a famous holy war abroad.',
+  lionheart: 'The ruler gained a lasting reputation as a brave warrior.',
   'magna-carta': 'The king had to promise not to be unfair or too powerful.',
-  'barons-war': 'Powerful lords fought King John over how he ruled.',
+  'barons-war': 'Powerful lords fought the king over how he ruled.',
   montfort: 'Important people met to help choose how the country should be run.',
-  'westminster-abbey': 'Henry rebuilt the great church we still know today.',
-  wales: 'Edward took control of Wales and changed how it was ruled.',
+  'westminster-abbey': 'The great church at Westminster was rebuilt on a grand scale.',
+  wales: 'The conquest of Wales changed how it was ruled.',
   'model-parliament': 'This meeting helped shape the future Parliament.',
-  bannockburn: 'Scotland won a famous battle against Edward II.',
-  'hundred-years-war': 'Edward won big battles in a long war with France.',
+  bannockburn: 'Scotland won a famous battle that defined the reign.',
+  'hundred-years-war': 'Big victories in a long war with France defined the reign.',
   'black-death': 'A terrible sickness killed many people across the country.',
   'peasants-revolt': 'Poor people rose up because life felt unfair.',
-  deposed: 'Richard lost his crown and was forced off the throne.',
-  deposition: 'Henry took the crown from Richard II.',
-  agincourt: 'Henry V won a famous battle against France.',
-  troyes: 'This treaty said Henry V would inherit the French crown.',
+  deposed: 'The ruler lost the crown and was forced off the throne.',
+  deposition: 'The crown was taken from the previous king.',
+  agincourt: 'A famous victory against France defined the reign.',
+  troyes: 'This treaty said the English ruler would inherit the French crown.',
   'wars-of-roses': 'Two royal families fought over who should be king.',
-  madness: 'Henry VI became very ill in his mind and could not rule well.',
-  towton: 'Edward IV won a huge battle and became king.',
-  tewkesbury: 'Edward IV beat his enemies and won back the throne.',
-  'princes-tower': 'Edward V was one of two princes who vanished in the Tower.',
-  'princes-r3': 'The missing princes are strongly linked with Richard III.',
-  bosworth: 'Richard III lost this battle and the Tudors took over.',
-  'bosworth-h7': 'Henry VII won the crown by beating Richard III in battle.',
+  madness: 'The ruler became too unwell to govern steadily.',
+  towton: 'A huge battle helped secure the crown.',
+  tewkesbury: 'Victory in battle restored the ruler to the throne.',
+  'princes-tower': 'One of the vanished princes in the Tower briefly held the crown.',
+  'princes-r3': 'The missing princes remain the great mystery of the reign.',
+  bosworth: 'Defeat in battle ended the reign and the old dynasty.',
+  'bosworth-h7': 'Victory in battle founded a new dynasty.',
   'tudor-rose': 'This marriage joined two fighting families together.',
-  'break-rome': 'Henry VIII split England’s church away from the Pope.',
+  'break-rome': 'England’s church split away from the Pope.',
   dissolution: 'Monasteries were closed and their lands were taken.',
   'prayer-book': 'A new church book changed how services were held.',
   somerset: 'People rebelled because changes made life harder.',
-  'nine-days': 'Jane was queen only for a very short time.',
-  'bloody-mary': 'Mary punished Protestants by burning many of them.',
+  'nine-days': 'This reign lasted only a very short time.',
+  'bloody-mary': 'Protestants were burned for their beliefs.',
   calais: 'England lost its last piece of land in France.',
   armada: 'England stopped Spain’s great fleet from invading.',
-  'mary-queen-scots': 'Elizabeth had her rival Mary put to death.',
+  'mary-queen-scots': 'A rival claimant was executed after years of tension.',
   gunpowder: 'A plot tried to blow up the king and Parliament.',
-  'king-james-bible': 'A famous English Bible was made in James’s time.',
+  'king-james-bible': 'A famous English Bible was published.',
   'civil-war': 'The king and Parliament fought over who had power.',
-  'execution-c1': 'Charles I was put to death after the war.',
+  'execution-c1': 'The king was put to death after the war.',
   restoration: 'The monarchy came back after years without a king.',
   'great-fire': 'A huge fire burned much of London.',
-  'glorious-revolution': 'James II was pushed out and new rulers were chosen.',
-  'glorious-revolution-w3': 'William came to power in the Glorious Revolution.',
-  boyne: 'William won a key battle in Ireland.',
-  'joint-rule': 'Mary and William ruled together as king and queen.',
+  'glorious-revolution': 'The ruler was pushed out and new rulers were chosen.',
+  'glorious-revolution-w3': 'A new ruler took the crown in the Glorious Revolution.',
+  boyne: 'A key battle in Ireland secured the new settlement.',
+  'joint-rule': 'Two rulers shared the crown as king and queen.',
   union: 'England and Scotland joined to make Great Britain.',
-  marlborough: 'British armies won famous battles in Anne’s time.',
+  marlborough: 'British armies won famous battles on the continent.',
   'jacobite-1715': 'Supporters of the old royal family tried to take back the crown.',
   'jacobite-1745': 'Bonnie Prince Charlie tried to win the throne.',
   'american-independence': 'Britain lost control of the American colonies.',
   napoleon: 'Britain helped defeat Napoleon at Waterloo.',
-  regency: 'George was too ill to rule, so his son ruled for him.',
+  regency: 'The monarch was too ill to rule, so a regent took over.',
   'reform-act': 'More people got a say in choosing Members of Parliament.',
   'great-exhibition': 'Britain showed off inventions and goods from around the world.',
-  jubilee: 'People celebrated Victoria’s long time on the throne.',
+  jubilee: 'People celebrated an exceptionally long reign.',
   'edwardian-age': 'This began a stylish new period before the First World War.',
   'first-world-war': 'Britain entered a huge war fought across the world.',
-  'windsor-name': 'The royal family changed its name to Windsor.',
-  abdication: 'Edward VIII gave up the throne to marry Wallis Simpson.',
+  'windsor-name': 'The royal family changed its house name during wartime.',
+  abdication: 'The ruler gave up the throne to marry Wallis Simpson.',
   'second-world-war': 'Britain went to war again against Nazi Germany.',
   blitz: 'German bombing badly damaged British towns and cities.',
   'televised-coronation': 'Millions watched the coronation live on television.',
-  'platinum-jubilee': 'People celebrated 70 years of Elizabeth II as queen.',
-  'accession-c3': 'Charles became king when Queen Elizabeth II died.',
-  'coronation-2023': 'Charles was crowned in a grand ceremony at Westminster Abbey.',
+  'platinum-jubilee': 'People celebrated 70 years on the throne.',
+  'accession-c3': 'A new reign began when the previous monarch died.',
+  'coronation-2023': 'A grand coronation took place at Westminster Abbey.',
 }
 
 const aliasMap = buildAliasMap(monarchs)
@@ -143,7 +142,7 @@ const state: AppState = {
   completed: new Set(),
   skipped: new Set(),
   inputValue: '',
-  status: 'Study the highlighted reign and its clue notes, then type the monarch.',
+  status: '',
   startedAt: Date.now(),
   completedAt: null,
   revealedAll: false,
@@ -156,7 +155,6 @@ const state: AppState = {
   hintVisible: false,
   awaitingNextQuestion: false,
   resultKind: null,
-  transitionMessage: '',
   revealAnimationMonarchId: null,
 }
 
@@ -168,47 +166,39 @@ if (!app) {
 
 app.innerHTML = `
   <main class="app-shell">
-    <section class="hero">
-      <div class="hero__copy">
-        <p class="eyebrow">1050 to today</p>
-        <h1>Name the monarch from the reign</h1>
+    <section class="summary-strip" aria-label="Quiz summary">
+      <strong id="progress-value" class="summary-pill summary-pill--strong">Q 1/${monarchs.length} · 0 correct</strong>
+      <span id="timer-value" class="summary-pill">00:00</span>
+    </section>
+
+    <section class="quiz-entry">
+      <div class="quiz-entry__header">
+        <h1>Name the monarch</h1>
       </div>
-      <div class="summary-grid">
-        <article class="stat-card">
-          <span class="stat-card__label">Score</span>
-          <strong id="progress-value" class="stat-card__value">0 / ${monarchs.length}</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-card__label">Elapsed</span>
-          <strong id="timer-value" class="stat-card__value">00:00</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-card__label">Visible span</span>
-          <strong id="view-value" class="stat-card__value">${Math.round(WORLD_SPAN)} years</strong>
-        </article>
-      </div>
+
+      <section class="controls">
+        <label class="answer-box" for="answer-input">
+          <span class="answer-box__label">Your answer</span>
+          <div class="answer-box__row">
+            <input
+              id="answer-input"
+              class="answer-box__input"
+              type="text"
+              autocomplete="off"
+              autocapitalize="words"
+              spellcheck="false"
+              placeholder="Type the monarch name..."
+            />
+            <span id="answer-feedback" class="answer-feedback" aria-live="polite"></span>
+          </div>
+        </label>
+        <div class="control-cluster">
+          <button id="quiz-action" class="control-button" type="button">Skip</button>
+        </div>
+      </section>
     </section>
 
     <section id="quiz-panel" class="quiz-panel" aria-live="polite"></section>
-
-    <section class="controls">
-      <label class="answer-box" for="answer-input">
-        <span class="answer-box__label">Your answer</span>
-        <input
-          id="answer-input"
-          class="answer-box__input"
-          type="text"
-          autocomplete="off"
-          autocapitalize="words"
-          spellcheck="false"
-          placeholder="Type the monarch name..."
-        />
-      </label>
-      <div class="control-cluster">
-        <button id="reveal-all" class="control-button" type="button">Reveal all answers</button>
-        <button id="zoom-reset" class="control-button control-button--strong" type="button">Refocus clue</button>
-      </div>
-    </section>
 
     <p id="status-text" class="status-text"></p>
 
@@ -233,40 +223,37 @@ app.innerHTML = `
 
 const quizPanel = document.querySelector<HTMLElement>('#quiz-panel')
 const answerInput = document.querySelector<HTMLInputElement>('#answer-input')
+const answerFeedback = document.querySelector<HTMLElement>('#answer-feedback')
 const progressValue = document.querySelector<HTMLElement>('#progress-value')
 const timerValue = document.querySelector<HTMLElement>('#timer-value')
-const viewValue = document.querySelector<HTMLElement>('#view-value')
 const statusText = document.querySelector<HTMLElement>('#status-text')
 const timelineViewport = document.querySelector<HTMLDivElement>('#timeline-viewport')
 const monarchInfo = document.querySelector<HTMLElement>('#monarch-info')
-const revealAllButton = document.querySelector<HTMLButtonElement>('#reveal-all')
-const zoomResetButton = document.querySelector<HTMLButtonElement>('#zoom-reset')
+const quizActionButton = document.querySelector<HTMLButtonElement>('#quiz-action')
 
 if (
   !quizPanel ||
   !answerInput ||
+  !answerFeedback ||
   !progressValue ||
   !timerValue ||
-  !viewValue ||
   !statusText ||
   !timelineViewport ||
   !monarchInfo ||
-  !revealAllButton ||
-  !zoomResetButton
+  !quizActionButton
 ) {
   throw new Error('Failed to bind required UI elements.')
 }
 
 const boundQuizPanel = quizPanel
 const boundAnswerInput = answerInput
+const boundAnswerFeedback = answerFeedback
 const boundProgressValue = progressValue
 const boundTimerValue = timerValue
-const boundViewValue = viewValue
 const boundStatusText = statusText
 const boundTimelineViewport = timelineViewport
 const boundMonarchInfo = monarchInfo
-const boundRevealAllButton = revealAllButton
-const boundZoomResetButton = zoomResetButton
+const boundQuizActionButton = quizActionButton
 
 boundAnswerInput.addEventListener('input', (event) => {
   state.inputValue = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.value : ''
@@ -279,17 +266,20 @@ boundAnswerInput.addEventListener('keydown', (event) => {
   submitCurrentGuess()
 })
 
-boundRevealAllButton.addEventListener('click', () => {
-  revealAllMonarchs()
-})
+boundQuizActionButton.addEventListener('click', () => {
+  if (state.awaitingNextQuestion) {
+    goToNextQuestion()
+    return
+  }
 
-boundZoomResetButton.addEventListener('click', () => {
-  state.status = state.currentMonarchId ? 'Refocused on the highlighted reign.' : 'Showing the full timeline for review.'
-  focusCurrentQuestion(true)
+  skipCurrentQuestion()
 })
 
 bindViewportInteractions(boundTimelineViewport)
 bindPanelInteractions(boundQuizPanel, boundMonarchInfo, boundTimelineViewport)
+window.addEventListener('resize', () => {
+  render()
+})
 
 window.setInterval(() => {
   renderSummary()
@@ -306,6 +296,12 @@ function render(): void {
   boundAnswerInput.value = state.inputValue
   boundAnswerInput.disabled = !state.currentMonarchId || state.awaitingNextQuestion
   boundAnswerInput.placeholder = !state.currentMonarchId ? 'Quiz finished' : state.awaitingNextQuestion ? 'Click next question...' : 'Type the monarch name...'
+  boundAnswerFeedback.textContent = state.awaitingNextQuestion ? (state.resultKind === 'correct' ? '✓ Correct' : 'Skipped') : ''
+  boundAnswerFeedback.dataset.kind = state.awaitingNextQuestion ? (state.resultKind ?? 'skipped') : ''
+  boundQuizActionButton.hidden = !state.currentMonarchId
+  boundQuizActionButton.disabled = !state.currentMonarchId
+  boundQuizActionButton.textContent = state.awaitingNextQuestion ? (getNextQuestionId() ? 'Next question' : 'Finish quiz') : 'Skip'
+  boundQuizActionButton.classList.toggle('control-button--strong', state.awaitingNextQuestion)
   boundQuizPanel.innerHTML = renderQuestionPanel()
   boundTimelineViewport.innerHTML = renderTimeline()
   boundMonarchInfo.innerHTML = renderMonarchInfo()
@@ -314,21 +310,25 @@ function render(): void {
 function renderSummary(): void {
   const correctCount = state.answered.size
   const skippedCount = state.skipped.size
-  boundProgressValue.textContent =
+  const currentQuestionNumber = state.currentMonarchId
+    ? state.completed.has(state.currentMonarchId)
+      ? state.completed.size
+      : state.completed.size + 1
+    : monarchs.length
+  const questionSummary = state.currentMonarchId ? `Q ${currentQuestionNumber}/${monarchs.length}` : 'Done'
+  const scoreSummary =
     skippedCount > 0
-      ? `${correctCount} / ${monarchs.length} correct · ${skippedCount} skipped`
-      : `${correctCount} / ${monarchs.length} correct`
+      ? `${correctCount} correct, ${skippedCount} skipped`
+      : `${correctCount} correct`
+
+  boundProgressValue.textContent = `${questionSummary} · ${scoreSummary}`
 
   const endTime = state.completedAt ?? Date.now()
   boundTimerValue.textContent = formatElapsed(endTime - state.startedAt)
-
-  const span = state.view.end - state.view.start
-  boundViewValue.textContent = `${formatYears(span)} visible`
 }
 
 function renderQuestionPanel(): string {
   const currentMonarch = state.currentMonarchId ? monarchById.get(state.currentMonarchId) ?? null : null
-  const nextQuestionId = getNextQuestionId()
 
   if (!currentMonarch) {
     const totalTime = state.completedAt ? formatElapsed(state.completedAt - state.startedAt) : formatElapsed(Date.now() - state.startedAt)
@@ -349,20 +349,11 @@ function renderQuestionPanel(): string {
     `
   }
 
-  const questionNumber = state.completed.has(currentMonarch.id) ? state.completed.size : state.completed.size + 1
   const exactReigns = getMonarchExactReigns(currentMonarch)
-  const portraitUrl = state.hintVisible ? state.portraitUrls.get(currentMonarch.id) : undefined
-  const resultBanner = state.awaitingNextQuestion
-    ? `
-      <div class="quiz-result quiz-result--${state.resultKind ?? 'skipped'}" role="status" aria-live="polite">
-        <span class="quiz-result__icon" aria-hidden="true">${state.resultKind === 'correct' ? '✓' : 'Skip'}</span>
-        <div class="quiz-result__text">
-          <strong>${state.resultKind === 'correct' ? 'Correct' : 'Skipped'}</strong>
-          <span>${state.transitionMessage}</span>
-        </div>
-      </div>
-    `
-    : ''
+  const answerRevealed = state.awaitingNextQuestion && state.resultKind !== null
+  const portraitRevealed = state.hintVisible
+  const portraitUrl = portraitRevealed ? state.portraitUrls.get(currentMonarch.id) : undefined
+  const reignLabel = answerRevealed ? `${currentMonarch.name} reigned` : 'This monarch reigned:'
   const eventNotes = currentMonarch.events
     .slice()
     .sort((left, right) => left.year - right.year)
@@ -374,46 +365,10 @@ function renderQuestionPanel(): string {
 
   return `
     <section class="quiz-panel__card">
-      ${resultBanner}
-      <div class="quiz-panel__header">
-        <div>
-          <p class="quiz-panel__eyebrow">Question ${questionNumber} of ${monarchs.length}</p>
-          <h2>Who ruled this reign?</h2>
-          <p class="quiz-panel__prompt">${
-            state.awaitingNextQuestion
-              ? 'Review the revealed monarch, then move on when you are ready.'
-              : 'Use the highlighted span on the timeline, then match it to these reign clues.'
-          }</p>
-        </div>
-        <div class="quiz-panel__actions">
-          ${
-            state.awaitingNextQuestion
-              ? `
-                <button
-                  class="control-button control-button--strong"
-                  type="button"
-                  data-next-question="true"
-                >
-                  ${nextQuestionId ? 'Next question' : 'Finish quiz'}
-                </button>
-              `
-              : ''
-          }
-          <button
-            class="control-button"
-            type="button"
-            data-skip-question="true"
-            ${state.awaitingNextQuestion ? 'disabled' : ''}
-          >
-            Skip
-          </button>
-        </div>
-      </div>
-
-      <div class="quiz-panel__grid">
+      <div class="quiz-panel__grid ${answerRevealed ? 'quiz-panel__grid--details-only' : ''}">
         <div class="quiz-panel__details">
           <div class="quiz-panel__section">
-            <span class="quiz-panel__label">Highlighted reign</span>
+            <span class="quiz-panel__label">${reignLabel}</span>
             <div class="quiz-panel__chips">
               ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
             </div>
@@ -443,18 +398,24 @@ function renderQuestionPanel(): string {
           </div>
         </div>
 
-        <div
-          class="quiz-panel__hint ${state.hintVisible ? 'quiz-panel__hint--visible' : ''} ${!state.hintVisible && !state.awaitingNextQuestion ? 'quiz-panel__hint--clickable' : ''}"
-          ${!state.hintVisible && !state.awaitingNextQuestion ? 'data-toggle-hint="true" role="button" tabindex="0" aria-label="Reveal the portrait hint"' : ''}
-        >
-          ${
-            state.hintVisible
-              ? portraitUrl
-                ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
-                : '<div class="quiz-panel__hint-fallback">Portrait hint unavailable for this reign.</div>'
-              : '<div class="quiz-panel__hint-placeholder">Reveal the portrait if you need an extra clue.</div>'
-          }
-        </div>
+        ${
+          answerRevealed
+            ? ''
+            : `
+              <div
+                class="quiz-panel__hint ${portraitRevealed ? 'quiz-panel__hint--visible' : ''} ${!portraitRevealed ? 'quiz-panel__hint--clickable' : ''}"
+                ${!portraitRevealed ? 'data-toggle-hint="true" role="button" tabindex="0" aria-label="Reveal the portrait hint"' : ''}
+              >
+                ${
+                  portraitRevealed
+                    ? portraitUrl
+                      ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
+                      : '<div class="quiz-panel__hint-fallback">Portrait hint unavailable for this reign.</div>'
+                    : '<div class="quiz-panel__hint-placeholder">Click to reveal portrait (clue)</div>'
+                }
+              </div>
+            `
+        }
       </div>
     </section>
   `
@@ -467,9 +428,10 @@ function renderTimeline(): string {
   const cardsHtml = renderMonarchCards(monarchs)
   const ticksHtml = renderAxisTicks()
   const eventsHtml = renderEvents(monarchs)
+  const orientationClass = isMobileTimeline() ? 'timeline-stage--vertical' : ''
 
   return `
-    <div class="timeline-stage">
+    <div class="timeline-stage ${orientationClass}">
       <div class="timeline-stage__houses">${housesHtml}</div>
       <div class="timeline-stage__monarchs">${segmentsHtml}${cardsHtml}</div>
       <div class="timeline-stage__axis">
@@ -489,6 +451,7 @@ function renderTimeline(): string {
 }
 
 function renderHouses(periods: HousePeriod[]): string {
+  const mobileTimeline = isMobileTimeline()
   return periods
     .filter((period) => overlaps(period.start, period.end, state.view.start, state.view.end))
     .map((period) => {
@@ -496,10 +459,14 @@ function renderHouses(periods: HousePeriod[]): string {
       if (!metrics) return ''
 
       const labelVisible = metrics.widthPx > 90
+      const renderedStart = getRenderedRangeStartPercent(metrics)
+      const style = mobileTimeline
+        ? `top:${renderedStart}%; height:${metrics.widthPct}%; --house-color:${period.color};`
+        : `left:${metrics.leftPct}%; width:${metrics.widthPct}%; --house-color:${period.color};`
       return `
         <div
           class="house-band"
-          style="left:${metrics.leftPct}%; width:${metrics.widthPct}%; --house-color:${period.color};"
+          style="${style}"
           title="${period.label}"
         >
           ${labelVisible ? `<span>${period.label}</span>` : ''}
@@ -526,20 +493,25 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
   const metrics = getMetrics(reign.start, reign.end)
   if (!metrics) return ''
 
+  const mobileTimeline = isMobileTimeline()
   const revealed = state.completed.has(monarch.id)
   const target = state.currentMonarchId === monarch.id && !revealed
   const recent = state.recentMonarchId === monarch.id
   const houseColor = houseColorMap.get(monarch.house) ?? '#6c4b3a'
-  const top = 344 + lane * 16
+  const trackOffset = mobileTimeline ? 12 + lane * 18 : 344 + lane * 16
+  const renderedStart = getRenderedRangeStartPercent(metrics)
   const exactDates = getExactReignLabel(monarch.id, reignIndex, reign)
   const stateClass = revealed ? 'reign-segment--found' : target ? 'reign-segment--target' : 'reign-segment--ghost'
   const accessibleLabel = revealed ? `${monarch.name}: ${exactDates}` : target ? `Current clue: ${exactDates}` : exactDates
   const tooltipTitle = revealed ? `${monarch.name}: ${exactDates}` : target ? `Current clue · ${exactDates}` : exactDates
+  const style = mobileTimeline
+    ? `top:${renderedStart}%; height:${Math.max(metrics.widthPct, 0.35)}%; left:${trackOffset}px; --segment-color:${houseColor};`
+    : `left:${metrics.leftPct}%; width:${Math.max(metrics.widthPct, 0.35)}%; top:${trackOffset}px; --segment-color:${houseColor};`
 
   return `
     <div
       class="reign-segment ${stateClass} ${recent ? 'reign-segment--recent' : ''}"
-      style="left:${metrics.leftPct}%; width:${Math.max(metrics.widthPct, 0.35)}%; top:${top}px; --segment-color:${houseColor};"
+      style="${style}"
       title="${tooltipTitle}"
       tabindex="0"
       aria-label="${accessibleLabel}"
@@ -554,6 +526,7 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
 }
 
 function renderMonarchCards(items: Monarch[]): string {
+  const mobileTimeline = isMobileTimeline()
   const visibleFound = items
     .filter((monarch) => state.completed.has(monarch.id))
     .map((monarch) => {
@@ -566,7 +539,7 @@ function renderMonarchCards(items: Monarch[]): string {
 
       return {
         monarch,
-        center: metrics.leftPct + metrics.widthPct / 2,
+        center: getRenderedCenterPercent(metrics),
         centerPx: metrics.leftPx + metrics.widthPx / 2,
         lane: monarchLanes.get(monarch.id) ?? 0,
         widthPx,
@@ -582,15 +555,20 @@ function renderMonarchCards(items: Monarch[]): string {
       const imageUrl = state.portraitUrls.get(placement.monarch.id)
       const recent = placement.monarch.id === state.recentMonarchId
       const revealAnimation = placement.monarch.id === state.revealAnimationMonarchId
-      const top = 14 + placement.lane * 34 + placement.stack * 116
-      const width = placement.mode === 'full' ? 148 : placement.mode === 'compact' ? 114 : 44
+      const footprint = getCardFootprint(placement.mode)
+      const trackOffset = mobileTimeline
+        ? 28 + placement.lane * 24 + placement.stack * (footprint.width + 10)
+        : 14 + placement.lane * 34 + placement.stack * 116
       const imageVisible = placement.mode !== 'badge'
       const dateVisible = placement.mode !== 'badge'
+      const style = mobileTimeline
+        ? `top:${placement.center}%; left:${trackOffset}px; width:${footprint.width}px;`
+        : `left:${placement.center}%; top:${trackOffset}px; width:${footprint.width}px;`
 
       return `
         <article
           class="monarch-card monarch-card--${placement.mode} ${recent ? 'monarch-card--recent' : ''} ${revealAnimation ? 'monarch-card--reveal' : ''}"
-          style="left:${placement.center}%; top:${top}px; width:${width}px;"
+          style="${style}"
           title="${placement.monarch.name}: ${placement.monarch.dateLabel}"
           tabindex="0"
           role="button"
@@ -624,12 +602,7 @@ function renderMonarchInfo(): string {
   const monarch = state.selectedMonarchId ? monarchById.get(state.selectedMonarchId) : null
 
   if (!monarch || !state.completed.has(monarch.id)) {
-    return `
-      <div class="monarch-info__empty">
-        <strong>Revealed monarch review</strong>
-        <span>Complete a clue, or click any revealed reign on the timeline to open a larger portrait and summary here.</span>
-      </div>
-    `
+    return ''
   }
 
   const portraitUrl = state.portraitUrls.get(monarch.id)
@@ -660,14 +633,15 @@ function renderMonarchInfo(): string {
 }
 
 function renderAxisTicks(): string {
+  const mobileTimeline = isMobileTimeline()
   const step = getTickStep(state.view.end - state.view.start)
   const firstTick = Math.ceil(state.view.start / step) * step
   const ticks: string[] = []
 
   for (let year = firstTick; year < state.view.end; year += step) {
-    const x = percentFromYear(year)
+    const x = getRenderedYearPercent(year)
     ticks.push(`
-      <div class="axis-tick" style="left:${x}%;">
+      <div class="axis-tick" style="${mobileTimeline ? `top:${x}%;` : `left:${x}%;`}">
         <span>${year}</span>
       </div>
     `)
@@ -677,6 +651,7 @@ function renderAxisTicks(): string {
 }
 
 function renderEvents(items: Monarch[]): string {
+  const mobileTimeline = isMobileTimeline()
   const maxEventsPerMonarch = getVisibleEventLimitPerMonarch(state.view.end - state.view.start)
 
   const allEvents = items.flatMap((monarch) =>
@@ -694,12 +669,13 @@ function renderEvents(items: Monarch[]): string {
 
   return placements
     .map((event) => {
-      const x = percentFromYear(event.year)
-      const top = 24 + event.lane * 44
+      const x = getRenderedYearPercent(event.year)
+      const trackOffset = mobileTimeline ? 12 + event.lane * 54 : 24 + event.lane * 44
+      const style = mobileTimeline ? `top:${x}%; left:${trackOffset}px;` : `left:${x}%; top:${trackOffset}px;`
       return `
         <div
           class="timeline-event ${event.showLabel ? '' : 'timeline-event--dot-only'} ${event.isCurrent ? 'timeline-event--current' : ''}"
-          style="left:${x}%; top:${top}px;"
+          style="${style}"
           title="${event.year}: ${event.label} (${event.monarchName})"
           tabindex="0"
           aria-label="${event.year}: ${event.label}. ${event.detail ?? ''}"
@@ -777,40 +753,15 @@ function completeCurrentQuestion(outcome: 'correct' | 'skipped'): boolean {
   state.revealAnimationMonarchId = monarchId
   state.selectedMonarchId = monarchId
   state.inputValue = ''
-  state.hintVisible = false
+  state.hintVisible = outcome === 'skipped'
   state.revealedAll = false
   state.awaitingNextQuestion = true
   state.resultKind = outcome
   boundAnswerInput.value = ''
-  state.transitionMessage =
-    outcome === 'correct'
-      ? `${monarch.name} is now shown on the timeline and opened below. Click Next question to move on.`
-      : `The answer was ${monarch.name}. It is now shown on the timeline and opened below. Click Next question to move on.`
-  state.status = state.transitionMessage
+  state.status = ''
   render()
   boundAnswerInput.blur()
   return true
-}
-
-function revealAllMonarchs(): void {
-  state.completed = new Set(monarchs.map((monarch) => monarch.id))
-  state.recentMonarchId = null
-  state.revealAnimationMonarchId = null
-  state.selectedMonarchId = null
-  state.currentMonarchId = null
-  state.hintVisible = false
-  state.inputValue = ''
-  state.revealedAll = true
-  state.awaitingNextQuestion = false
-  state.resultKind = null
-  state.transitionMessage = ''
-
-  if (!state.completedAt) {
-    state.completedAt = Date.now()
-  }
-
-  state.status = `All ${monarchs.length} monarchs revealed for review.`
-  animateViewTo(WORLD_START_YEAR, WORLD_END_YEAR)
 }
 
 function getNextQuestionId(): string | null {
@@ -828,12 +779,11 @@ function chooseQuestion(monarchId: string): void {
   state.currentMonarchId = monarchId
   state.awaitingNextQuestion = false
   state.resultKind = null
-  state.transitionMessage = ''
   state.revealAnimationMonarchId = null
   state.selectedMonarchId = null
   state.inputValue = ''
   state.hintVisible = false
-  state.status = 'Question changed. Study the highlighted reign and type the monarch.'
+  state.status = ''
   render()
   boundAnswerInput.focus()
 }
@@ -843,7 +793,6 @@ function goToNextQuestion(): void {
 
   state.awaitingNextQuestion = false
   state.resultKind = null
-  state.transitionMessage = ''
   state.revealAnimationMonarchId = null
   state.selectedMonarchId = null
 
@@ -860,7 +809,7 @@ function goToNextQuestion(): void {
   }
 
   state.currentMonarchId = nextQuestionId
-  state.status = 'Study the highlighted reign and type the monarch.'
+  state.status = ''
   render()
   focusCurrentQuestion(true, 1100)
   boundAnswerInput.focus()
@@ -937,6 +886,28 @@ function sanitizeView(start: number, end: number): ViewState {
   }
 }
 
+function isMobileTimeline(): boolean {
+  return window.matchMedia('(max-width: 720px)').matches
+}
+
+function getTimelineAxisLengthPx(): number {
+  return Math.max(1, isMobileTimeline() ? boundTimelineViewport.clientHeight : boundTimelineViewport.clientWidth)
+}
+
+function getRenderedRangeStartPercent(metrics: { leftPct: number; widthPct: number }): number {
+  return isMobileTimeline() ? 100 - metrics.leftPct - metrics.widthPct : metrics.leftPct
+}
+
+function getRenderedCenterPercent(metrics: { leftPct: number; widthPct: number }): number {
+  const center = metrics.leftPct + metrics.widthPct / 2
+  return isMobileTimeline() ? 100 - center : center
+}
+
+function getRenderedYearPercent(year: number): number {
+  const percent = percentFromYear(year)
+  return isMobileTimeline() ? 100 - percent : percent
+}
+
 function getMetrics(start: number, end: number): { leftPct: number; widthPct: number; leftPx: number; widthPx: number } | null {
   const clippedStart = Math.max(start, state.view.start)
   const clippedEnd = Math.min(end, state.view.end)
@@ -947,8 +918,9 @@ function getMetrics(start: number, end: number): { leftPct: number; widthPct: nu
 
   const leftPct = ((clippedStart - state.view.start) / (state.view.end - state.view.start)) * 100
   const widthPct = ((clippedEnd - clippedStart) / (state.view.end - state.view.start)) * 100
-  const leftPx = (leftPct / 100) * boundTimelineViewport.clientWidth
-  const widthPx = (widthPct / 100) * boundTimelineViewport.clientWidth
+  const axisLength = getTimelineAxisLengthPx()
+  const leftPx = (leftPct / 100) * axisLength
+  const widthPx = (widthPct / 100) * axisLength
 
   return { leftPct, widthPct, leftPx, widthPx }
 }
@@ -1015,6 +987,12 @@ function downgradeMode(mode: CardMode): CardMode | null {
 }
 
 function getCardFootprint(mode: CardMode): { width: number; height: number } {
+  if (isMobileTimeline()) {
+    if (mode === 'full') return { width: 96, height: 82 }
+    if (mode === 'compact') return { width: 72, height: 64 }
+    return { width: 36, height: 36 }
+  }
+
   if (mode === 'full') return { width: 148, height: 104 }
   if (mode === 'compact') return { width: 114, height: 88 }
   return { width: 44, height: 44 }
@@ -1032,8 +1010,9 @@ function getBestVisibleCardMetrics(monarch: Monarch): { leftPct: number; widthPc
   return visibleReigns.reduce((best, current) => {
     if (current.widthPx > best.widthPx) return current
 
-    const bestCenterDistance = Math.abs(best.leftPx + best.widthPx / 2 - boundTimelineViewport.clientWidth / 2)
-    const currentCenterDistance = Math.abs(current.leftPx + current.widthPx / 2 - boundTimelineViewport.clientWidth / 2)
+    const axisCenter = getTimelineAxisLengthPx() / 2
+    const bestCenterDistance = Math.abs(best.leftPx + best.widthPx / 2 - axisCenter)
+    const currentCenterDistance = Math.abs(current.leftPx + current.widthPx / 2 - axisCenter)
     return currentCenterDistance < bestCenterDistance ? current : best
   })
 }
@@ -1047,10 +1026,11 @@ function placeEvents(
 
   const laneEnds = new Array<number>(eventLanes).fill(-Infinity)
   const placements: EventPlacement[] = []
+  const axisLength = getTimelineAxisLengthPx()
 
   for (const event of visible) {
     const labelWidth = estimateEventWidth(event.label)
-    const xPx = (percentFromYear(event.year) / 100) * boundTimelineViewport.clientWidth
+    const xPx = (percentFromYear(event.year) / 100) * axisLength
     let lane = 0
     let showLabel = false
 
@@ -1218,11 +1198,6 @@ function formatElapsed(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-function formatYears(value: number): string {
-  if (value < 10) return `${value.toFixed(1)} years`
-  return `${Math.round(value)} years`
-}
-
 function resolveAppUrl(path: string): string {
   return new URL(path.replace(/^\/+/, ''), appBaseUrl).toString()
 }
@@ -1245,22 +1220,11 @@ async function loadPortraitManifest(): Promise<void> {
 
 function bindPanelInteractions(quiz: HTMLElement, info: HTMLElement, viewport: HTMLDivElement): void {
   quiz.addEventListener('click', (event) => {
-    const nextButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-next-question="true"]') : null
-    if (nextButton) {
-      goToNextQuestion()
-      return
-    }
-
     const hintButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-toggle-hint="true"]') : null
     if (hintButton && state.currentMonarchId) {
       state.hintVisible = !state.hintVisible
       render()
       return
-    }
-
-    const skipButton = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[data-skip-question="true"]') : null
-    if (skipButton) {
-      skipCurrentQuestion()
     }
   })
 
@@ -1326,7 +1290,7 @@ function bindPanelInteractions(quiz: HTMLElement, info: HTMLElement, viewport: H
 
 function bindViewportInteractions(viewport: HTMLDivElement): void {
   let activePointerId: number | null = null
-  let dragStartX = 0
+  let dragStartPosition = 0
   let dragStartView = state.view
 
   viewport.addEventListener(
@@ -1334,7 +1298,9 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
     (event) => {
       event.preventDefault()
       const rect = viewport.getBoundingClientRect()
-      const focalPoint = clamp((event.clientX - rect.left) / rect.width, 0, 1)
+      const focalPoint = isMobileTimeline()
+        ? clamp(1 - (event.clientY - rect.top) / rect.height, 0, 1)
+        : clamp((event.clientX - rect.left) / rect.width, 0, 1)
       const factor = Math.exp(event.deltaY * 0.0012)
       zoomAround(factor, focalPoint)
     },
@@ -1348,7 +1314,7 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
     }
 
     activePointerId = event.pointerId
-    dragStartX = event.clientX
+    dragStartPosition = isMobileTimeline() ? event.clientY : event.clientX
     dragStartView = { ...state.view }
     viewport.setPointerCapture(event.pointerId)
     viewport.dataset.dragging = 'true'
@@ -1356,10 +1322,13 @@ function bindViewportInteractions(viewport: HTMLDivElement): void {
 
   viewport.addEventListener('pointermove', (event) => {
     if (activePointerId !== event.pointerId) return
-    const dx = event.clientX - dragStartX
+    const delta = (isMobileTimeline() ? event.clientY : event.clientX) - dragStartPosition
     const span = dragStartView.end - dragStartView.start
-    const yearsPerPixel = span / viewport.clientWidth
-    const nextStart = dragStartView.start - dx * yearsPerPixel
+    const axisLength = isMobileTimeline() ? viewport.clientHeight : viewport.clientWidth
+    const yearsPerPixel = span / Math.max(axisLength, 1)
+    const nextStart = isMobileTimeline()
+      ? dragStartView.start + delta * yearsPerPixel
+      : dragStartView.start - delta * yearsPerPixel
     state.view = sanitizeView(nextStart, nextStart + span)
     render()
   })
