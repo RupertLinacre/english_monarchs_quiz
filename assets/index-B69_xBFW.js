@@ -3,6 +3,9 @@
     <section class="quiz-entry">
       <div class="quiz-entry__header">
         <h1>Name the monarch</h1>
+        <p class="quiz-entry__timeline-hint">
+          Click on a bar in the timeline to choose a different monarch to name
+        </p>
         <section class="summary-strip" aria-label="Quiz summary">
           <strong id="question-value" class="summary-pill summary-pill--strong">Q 1/${u.length}</strong>
           <span id="score-value" class="summary-pill">0 correct</span>
