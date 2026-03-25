@@ -90,7 +90,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'HI',
     events: [
       { id: 'white-ship', year: 1120, label: 'White Ship disaster' },
-      { id: 'treasury', year: 1130, label: 'Pipe Roll records royal finance' },
+      { id: 'treasury', year: 1130, label: 'Earliest surviving Pipe Roll record' },
     ],
   },
   {
@@ -140,7 +140,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'RI',
     events: [
       { id: 'third-crusade', year: 1191, label: 'Third Crusade' },
-      { id: 'lionheart', year: 1192, label: 'Warrior legend grows' },
+      { id: 'captured', year: 1192, label: 'Captured on return from Crusade' },
     ],
   },
   {
@@ -206,7 +206,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Edward_III_of_England',
     portraitFallback: 'EIII',
     events: [
-      { id: 'hundred-years-war', year: 1346, label: "Crecy in the Hundred Years' War" },
+      { id: 'hundred-years-war', year: 1346, label: 'Battle of Crécy' },
       { id: 'black-death', year: 1348, label: 'Black Death reaches England' },
     ],
   },
@@ -233,7 +233,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'Henry_IV_of_England',
     portraitFallback: 'HIV',
-    events: [{ id: 'deposition', year: 1399, label: 'Seizes the throne from the previous king' }],
+    events: [{ id: 'deposition', year: 1399, label: 'Deposes Richard II and takes the throne' }],
   },
   {
     id: 'henry-v',
@@ -526,7 +526,7 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'George_IV',
     portraitFallback: 'GIV',
-    events: [{ id: 'regency', year: 1811, label: 'A regent begins ruling' }],
+    events: [],
   },
   {
     id: 'william-iv',
