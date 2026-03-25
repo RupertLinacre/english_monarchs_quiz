@@ -1129,7 +1129,9 @@ function getTickStep(span: number): number {
 }
 
 function getVisibleEventLimitPerMonarch(span: number): number {
-  if (span <= 70) return 2
+  if (span <= 60) return 4
+  if (span <= 120) return 3
+  if (span <= 220) return 2
   return 1
 }
 

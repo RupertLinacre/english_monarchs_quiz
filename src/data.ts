@@ -209,6 +209,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Henry_III_of_England',
     portraitFallback: 'HIII',
     events: [
+      { id: 'magna-carta-reissue', year: 1216, label: 'Magna Carta reissued' },
       { id: 'montfort', year: 1265, label: "Simon de Montfort's Parliament" },
       { id: 'westminster-abbey', year: 1245, label: 'Westminster Abbey rebuilt' },
     ],
@@ -224,6 +225,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'EI',
     events: [
       { id: 'wales', year: 1284, label: 'Statute of Rhuddlan after conquest of Wales' },
+      { id: 'scotland-wars', year: 1296, label: 'Wars of Scottish independence begin' },
       { id: 'model-parliament', year: 1295, label: 'Model Parliament' },
     ],
   },
@@ -250,6 +252,7 @@ export const monarchs: Monarch[] = [
     events: [
       { id: 'hundred-years-war', year: 1346, label: 'Battle of Crécy' },
       { id: 'black-death', year: 1348, label: 'Black Death reaches England' },
+      { id: 'order-garter', year: 1348, label: 'Order of the Garter founded' },
     ],
   },
   {
@@ -288,6 +291,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'HV',
     events: [
       { id: 'agincourt', year: 1415, label: 'Battle of Agincourt' },
+      { id: 'hundred-years-context', year: 1415, label: "Hundred Years' War continues in France" },
       { id: 'troyes', year: 1420, label: 'Treaty of Troyes' },
     ],
   },
@@ -306,6 +310,7 @@ export const monarchs: Monarch[] = [
     events: [
       { id: 'wars-of-roses', year: 1455, label: 'Wars of the Roses begin' },
       { id: 'madness', year: 1453, label: 'Mental collapse destabilises rule' },
+      { id: 'loss-france', year: 1453, label: 'England loses most of its land in France' },
     ],
   },
   {
@@ -348,6 +353,7 @@ export const monarchs: Monarch[] = [
     events: [
       { id: 'princes-r3', year: 1483, label: 'Princes in the Tower' },
       { id: 'bosworth', year: 1485, label: 'Battle of Bosworth Field' },
+      { id: 'last-plantagenet', year: 1485, label: 'Last Plantagenet king dies in battle' },
     ],
   },
   {
@@ -362,6 +368,7 @@ export const monarchs: Monarch[] = [
     events: [
       { id: 'bosworth-h7', year: 1485, label: 'Wins the crown at Bosworth' },
       { id: 'tudor-rose', year: 1486, label: 'Marriage unites Lancaster and York' },
+      { id: 'star-chamber', year: 1487, label: 'Court of Star Chamber strengthened' },
     ],
   },
   {
@@ -374,6 +381,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Henry_VIII',
     portraitFallback: 'HVIII',
     events: [
+      { id: 'six-wives', year: 1533, label: 'Marriage to Anne Boleyn' },
       { id: 'break-rome', year: 1534, label: 'Break with Rome' },
       { id: 'dissolution', year: 1536, label: 'Dissolution of the monasteries' },
     ],
@@ -427,6 +435,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Elizabeth_I',
     portraitFallback: 'EI',
     events: [
+      { id: 'roanoke', year: 1585, label: 'First English colony in America attempted' },
       { id: 'armada', year: 1588, label: 'Spanish Armada defeated' },
       { id: 'mary-queen-scots', year: 1587, label: 'Mary, Queen of Scots executed' },
     ],
@@ -441,6 +450,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'James_VI_and_I',
     portraitFallback: 'JI',
     events: [
+      { id: 'union-crowns', year: 1603, label: 'Union of the Crowns (England and Scotland)' },
       { id: 'gunpowder', year: 1605, label: 'Gunpowder Plot' },
       { id: 'king-james-bible', year: 1611, label: 'Famous English Bible published' },
     ],
@@ -455,6 +465,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Charles_I_of_England',
     portraitFallback: 'CI',
     events: [
+      { id: 'ship-money', year: 1637, label: 'Ship Money tax controversy' },
       { id: 'civil-war', year: 1642, label: 'English Civil War begins' },
       { id: 'execution-c1', year: 1649, label: 'The king is executed' },
     ],
@@ -471,6 +482,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'CII',
     events: [
       { id: 'restoration', year: 1660, label: 'The Restoration' },
+      { id: 'plague', year: 1665, label: 'Great Plague of London' },
       { id: 'great-fire', year: 1666, label: 'Great Fire of London' },
     ],
   },
@@ -495,6 +507,7 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'William_III_of_England',
     portraitFallback: 'WIII',
     events: [
+      { id: 'bill-rights', year: 1689, label: 'Bill of Rights limits royal power' },
       { id: 'glorious-revolution-w3', year: 1688, label: 'Glorious Revolution' },
       { id: 'boyne', year: 1690, label: 'Battle of the Boyne' },
     ],
@@ -508,7 +521,10 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'Mary_II_of_England',
     portraitFallback: 'MII',
-    events: [{ id: 'joint-rule', year: 1689, label: 'Joint rule begins' }],
+    events: [
+      { id: 'joint-rule', year: 1689, label: 'Joint rule begins' },
+      { id: 'bill-rights', year: 1689, label: 'Bill of Rights limits royal power' },
+    ],
   },
   {
     id: 'anne',
@@ -521,6 +537,7 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'A',
     events: [
       { id: 'union', year: 1707, label: 'Acts of Union' },
+      { id: 'uk-created', year: 1707, label: 'Kingdom of Great Britain created' },
       { id: 'marlborough', year: 1704, label: 'Blenheim in the War of the Spanish Succession' },
     ],
   },
@@ -544,7 +561,10 @@ export const monarchs: Monarch[] = [
     aliases: [],
     wikipediaTitle: 'George_II_of_Great_Britain',
     portraitFallback: 'GII',
-    events: [{ id: 'jacobite-1745', year: 1745, label: 'Jacobite rising of 1745' }],
+    events: [
+      { id: 'last-battle-king', year: 1743, label: 'Last British monarch to lead troops in battle' },
+      { id: 'jacobite-1745', year: 1745, label: 'Jacobite rising of 1745' },
+    ],
   },
   {
     id: 'george-iii',
@@ -556,6 +576,8 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'George_III',
     portraitFallback: 'GIII',
     events: [
+      { id: 'act-union-ireland', year: 1801, label: 'United Kingdom formed with Ireland' },
+      { id: 'trafalgar', year: 1805, label: 'Battle of Trafalgar' },
       { id: 'american-independence', year: 1776, label: 'American colonies declare independence' },
       { id: 'napoleon', year: 1815, label: 'Waterloo ends the Napoleonic Wars' },
     ],
@@ -592,8 +614,10 @@ export const monarchs: Monarch[] = [
     wikipediaTitle: 'Queen_Victoria',
     portraitFallback: 'V',
     events: [
+      { id: 'industrial-revolution', year: 1850, label: 'Industrial Revolution transforms Britain' },
       { id: 'great-exhibition', year: 1851, label: 'Great Exhibition' },
       { id: 'jubilee', year: 1897, label: 'Diamond Jubilee' },
+      { id: 'empire-peak', year: 1900, label: 'British Empire at its height' },
     ],
   },
   {
@@ -619,6 +643,7 @@ export const monarchs: Monarch[] = [
     events: [
       { id: 'first-world-war', year: 1914, label: 'Britain enters the First World War' },
       { id: 'windsor-name', year: 1917, label: 'Royal house adopts a new name' },
+      { id: 'irish-independence', year: 1922, label: 'Irish Free State established' },
     ],
   },
   {
@@ -657,6 +682,8 @@ export const monarchs: Monarch[] = [
     portraitFallback: 'EII',
     events: [
       { id: 'televised-coronation', year: 1953, label: 'Televised coronation' },
+      { id: 'moon-landing', year: 1969, label: 'Moon landing watched worldwide' },
+      { id: 'devolution', year: 1999, label: 'Scottish Parliament and Welsh Assembly created' },
       { id: 'platinum-jubilee', year: 2022, label: 'Platinum Jubilee' },
     ],
   },
