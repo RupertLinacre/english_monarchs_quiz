@@ -15,6 +15,7 @@ type CardPlacement = {
   lane: number
   stack: number
   mode: CardMode
+  anonymized?: boolean
 }
 
 type EventPlacement = {
@@ -166,19 +167,18 @@ if (!app) {
 
 app.innerHTML = `
   <main class="app-shell">
-    <section class="summary-strip" aria-label="Quiz summary">
-      <strong id="progress-value" class="summary-pill summary-pill--strong">Q 1/${monarchs.length} · 0 correct</strong>
-      <span id="timer-value" class="summary-pill">00:00</span>
-    </section>
-
     <section class="quiz-entry">
       <div class="quiz-entry__header">
         <h1>Name the monarch</h1>
+        <section class="summary-strip" aria-label="Quiz summary">
+          <strong id="question-value" class="summary-pill summary-pill--strong">Q 1/${monarchs.length}</strong>
+          <span id="score-value" class="summary-pill">0 correct</span>
+          <span id="timer-value" class="summary-pill">00:00</span>
+        </section>
       </div>
 
       <section class="controls">
-        <label class="answer-box" for="answer-input">
-          <span class="answer-box__label">Your answer</span>
+        <label id="answer-entry" class="answer-box" for="answer-input">
           <div class="answer-box__row">
             <input
               id="answer-input"
@@ -189,12 +189,20 @@ app.innerHTML = `
               spellcheck="false"
               placeholder="Type the monarch name..."
             />
-            <span id="answer-feedback" class="answer-feedback" aria-live="polite"></span>
+            <button id="skip-action" class="control-button" type="button">Skip</button>
           </div>
         </label>
-        <div class="control-cluster">
-          <button id="quiz-action" class="control-button" type="button">Skip</button>
-        </div>
+
+        <section id="answer-reveal" class="answer-reveal" hidden aria-live="polite">
+          <div class="answer-reveal__summary">
+            <span id="answer-feedback" class="answer-feedback"></span>
+            <div class="answer-reveal__text">
+              <span id="revealed-answer-label" class="answer-reveal__label">Answer shown</span>
+              <strong id="revealed-answer" class="answer-reveal__answer"></strong>
+            </div>
+          </div>
+          <button id="next-action" class="control-button control-button--strong" type="button">Next question</button>
+        </section>
       </section>
     </section>
 
@@ -222,38 +230,56 @@ app.innerHTML = `
 `
 
 const quizPanel = document.querySelector<HTMLElement>('#quiz-panel')
+const answerEntry = document.querySelector<HTMLElement>('#answer-entry')
+const answerReveal = document.querySelector<HTMLElement>('#answer-reveal')
 const answerInput = document.querySelector<HTMLInputElement>('#answer-input')
 const answerFeedback = document.querySelector<HTMLElement>('#answer-feedback')
-const progressValue = document.querySelector<HTMLElement>('#progress-value')
+const revealedAnswerLabel = document.querySelector<HTMLElement>('#revealed-answer-label')
+const revealedAnswer = document.querySelector<HTMLElement>('#revealed-answer')
+const questionValue = document.querySelector<HTMLElement>('#question-value')
+const scoreValue = document.querySelector<HTMLElement>('#score-value')
 const timerValue = document.querySelector<HTMLElement>('#timer-value')
 const statusText = document.querySelector<HTMLElement>('#status-text')
 const timelineViewport = document.querySelector<HTMLDivElement>('#timeline-viewport')
 const monarchInfo = document.querySelector<HTMLElement>('#monarch-info')
-const quizActionButton = document.querySelector<HTMLButtonElement>('#quiz-action')
+const skipActionButton = document.querySelector<HTMLButtonElement>('#skip-action')
+const nextActionButton = document.querySelector<HTMLButtonElement>('#next-action')
 
 if (
   !quizPanel ||
+  !answerEntry ||
+  !answerReveal ||
   !answerInput ||
   !answerFeedback ||
-  !progressValue ||
+  !revealedAnswerLabel ||
+  !revealedAnswer ||
+  !questionValue ||
+  !scoreValue ||
   !timerValue ||
   !statusText ||
   !timelineViewport ||
   !monarchInfo ||
-  !quizActionButton
+  !skipActionButton ||
+  !nextActionButton
 ) {
   throw new Error('Failed to bind required UI elements.')
 }
 
 const boundQuizPanel = quizPanel
+const boundAnswerEntry = answerEntry
+const boundAnswerReveal = answerReveal
 const boundAnswerInput = answerInput
 const boundAnswerFeedback = answerFeedback
-const boundProgressValue = progressValue
+const boundRevealedAnswerLabel = revealedAnswerLabel
+const boundRevealedAnswer = revealedAnswer
+const boundQuestionValue = questionValue
+const boundScoreValue = scoreValue
 const boundTimerValue = timerValue
 const boundStatusText = statusText
 const boundTimelineViewport = timelineViewport
 const boundMonarchInfo = monarchInfo
-const boundQuizActionButton = quizActionButton
+const boundSkipActionButton = skipActionButton
+const boundNextActionButton = nextActionButton
 
 boundAnswerInput.addEventListener('input', (event) => {
   state.inputValue = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.value : ''
@@ -266,13 +292,12 @@ boundAnswerInput.addEventListener('keydown', (event) => {
   submitCurrentGuess()
 })
 
-boundQuizActionButton.addEventListener('click', () => {
-  if (state.awaitingNextQuestion) {
-    goToNextQuestion()
-    return
-  }
-
+boundSkipActionButton.addEventListener('click', () => {
   skipCurrentQuestion()
+})
+
+boundNextActionButton.addEventListener('click', () => {
+  goToNextQuestion()
 })
 
 bindViewportInteractions(boundTimelineViewport)
@@ -291,17 +316,25 @@ render()
 boundAnswerInput.focus()
 
 function render(): void {
+  const currentMonarch = state.currentMonarchId ? monarchById.get(state.currentMonarchId) ?? null : null
+  const answerRevealed = Boolean(currentMonarch && state.awaitingNextQuestion && state.resultKind)
+
   renderSummary()
   boundStatusText.textContent = state.status
+  boundAnswerEntry.hidden = !currentMonarch || answerRevealed
+  boundAnswerReveal.hidden = !answerRevealed
+  boundAnswerReveal.dataset.kind = answerRevealed ? (state.resultKind ?? '') : ''
   boundAnswerInput.value = state.inputValue
   boundAnswerInput.disabled = !state.currentMonarchId || state.awaitingNextQuestion
-  boundAnswerInput.placeholder = !state.currentMonarchId ? 'Quiz finished' : state.awaitingNextQuestion ? 'Click next question...' : 'Type the monarch name...'
-  boundAnswerFeedback.textContent = state.awaitingNextQuestion ? (state.resultKind === 'correct' ? '✓ Correct' : 'Skipped') : ''
-  boundAnswerFeedback.dataset.kind = state.awaitingNextQuestion ? (state.resultKind ?? 'skipped') : ''
-  boundQuizActionButton.hidden = !state.currentMonarchId
-  boundQuizActionButton.disabled = !state.currentMonarchId
-  boundQuizActionButton.textContent = state.awaitingNextQuestion ? (getNextQuestionId() ? 'Next question' : 'Finish quiz') : 'Skip'
-  boundQuizActionButton.classList.toggle('control-button--strong', state.awaitingNextQuestion)
+  boundAnswerInput.placeholder = !state.currentMonarchId ? 'Quiz finished' : 'Type the monarch name...'
+  boundAnswerFeedback.textContent = answerRevealed ? (state.resultKind === 'correct' ? 'Correct' : 'Skipped') : ''
+  boundAnswerFeedback.dataset.kind = answerRevealed ? (state.resultKind ?? 'skipped') : ''
+  boundRevealedAnswerLabel.textContent = answerRevealed ? (state.resultKind === 'correct' ? 'Answered correctly' : 'Answer shown') : ''
+  boundRevealedAnswer.textContent = answerRevealed && currentMonarch ? currentMonarch.name : ''
+  boundSkipActionButton.disabled = !currentMonarch || answerRevealed
+  boundNextActionButton.hidden = !answerRevealed
+  boundNextActionButton.disabled = !answerRevealed
+  boundNextActionButton.textContent = getNextQuestionId() ? 'Next question' : 'Finish quiz'
   boundQuizPanel.innerHTML = renderQuestionPanel()
   boundTimelineViewport.innerHTML = renderTimeline()
   boundMonarchInfo.innerHTML = renderMonarchInfo()
@@ -321,7 +354,8 @@ function renderSummary(): void {
       ? `${correctCount} correct, ${skippedCount} skipped`
       : `${correctCount} correct`
 
-  boundProgressValue.textContent = `${questionSummary} · ${scoreSummary}`
+  boundQuestionValue.textContent = questionSummary
+  boundScoreValue.textContent = scoreSummary
 
   const endTime = state.completedAt ?? Date.now()
   boundTimerValue.textContent = formatElapsed(endTime - state.startedAt)
@@ -365,13 +399,38 @@ function renderQuestionPanel(): string {
 
   return `
     <section class="quiz-panel__card">
-      <div class="quiz-panel__grid ${answerRevealed ? 'quiz-panel__grid--details-only' : ''}">
+      <div class="quiz-panel__grid quiz-panel__grid--details-only">
         <div class="quiz-panel__details">
           <div class="quiz-panel__section">
-            <span class="quiz-panel__label">${reignLabel}</span>
+            <div class="quiz-panel__section-header">
+              <span class="quiz-panel__label">${reignLabel}</span>
+              ${
+                answerRevealed
+                  ? ''
+                  : `<button
+                      class="quiz-panel__clue-button ${portraitRevealed ? 'quiz-panel__clue-button--active' : ''}"
+                      type="button"
+                      data-toggle-hint="true"
+                      aria-expanded="${portraitRevealed ? 'true' : 'false'}"
+                    >Clue</button>`
+              }
+            </div>
             <div class="quiz-panel__chips">
               ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
             </div>
+            ${
+              !answerRevealed && portraitRevealed
+                ? `
+                  <div class="quiz-panel__portrait-clue">
+                    ${
+                      portraitUrl
+                        ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
+                        : '<div class="quiz-panel__portrait-fallback">Portrait hint unavailable for this reign.</div>'
+                    }
+                  </div>
+                `
+                : ''
+            }
           </div>
 
           <div class="quiz-panel__section">
@@ -383,11 +442,11 @@ function renderQuestionPanel(): string {
                       .map(
                         (event) => `
                           <li class="quiz-panel__note">
-                            <strong>${event.year}</strong>
-                            <div>
+                            <div class="quiz-panel__note-heading">
+                              <strong>${event.year}</strong>
                               <span>${event.label}</span>
-                              <small>${event.note}</small>
                             </div>
+                            <small>${event.note}</small>
                           </li>
                         `,
                       )
@@ -397,25 +456,6 @@ function renderQuestionPanel(): string {
             </ul>
           </div>
         </div>
-
-        ${
-          answerRevealed
-            ? ''
-            : `
-              <div
-                class="quiz-panel__hint ${portraitRevealed ? 'quiz-panel__hint--visible' : ''} ${!portraitRevealed ? 'quiz-panel__hint--clickable' : ''}"
-                ${!portraitRevealed ? 'data-toggle-hint="true" role="button" tabindex="0" aria-label="Reveal the portrait hint"' : ''}
-              >
-                ${
-                  portraitRevealed
-                    ? portraitUrl
-                      ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
-                      : '<div class="quiz-panel__hint-fallback">Portrait hint unavailable for this reign.</div>'
-                    : '<div class="quiz-panel__hint-placeholder">Click to reveal portrait (clue)</div>'
-                }
-              </div>
-            `
-        }
       </div>
     </section>
   `
@@ -527,14 +567,17 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
 
 function renderMonarchCards(items: Monarch[]): string {
   const mobileTimeline = isMobileTimeline()
+  const currentClueId =
+    state.currentMonarchId && !state.completed.has(state.currentMonarchId) && !state.awaitingNextQuestion ? state.currentMonarchId : null
   const visibleFound = items
-    .filter((monarch) => state.completed.has(monarch.id))
+    .filter((monarch) => state.completed.has(monarch.id) || monarch.id === currentClueId)
     .map((monarch) => {
       const metrics = getBestVisibleCardMetrics(monarch)
       if (!metrics) return null
 
       const widthPx = Math.max(metrics.widthPx, 18)
-      const baseMode = getCardMode(widthPx, monarch.id === state.recentMonarchId)
+      const anonymized = monarch.id === currentClueId
+      const baseMode = getCardMode(widthPx, monarch.id === state.recentMonarchId || anonymized)
       if (!baseMode) return null
 
       return {
@@ -544,6 +587,7 @@ function renderMonarchCards(items: Monarch[]): string {
         lane: monarchLanes.get(monarch.id) ?? 0,
         widthPx,
         mode: baseMode,
+        anonymized,
       }
     })
     .filter((placement): placement is NonNullable<typeof placement> => placement !== null)
@@ -552,6 +596,7 @@ function renderMonarchCards(items: Monarch[]): string {
 
   return placed
     .map((placement) => {
+      const anonymized = placement.anonymized === true
       const imageUrl = state.portraitUrls.get(placement.monarch.id)
       const recent = placement.monarch.id === state.recentMonarchId
       const revealAnimation = placement.monarch.id === state.revealAnimationMonarchId
@@ -561,6 +606,15 @@ function renderMonarchCards(items: Monarch[]): string {
         : 14 + placement.lane * 34 + placement.stack * 116
       const imageVisible = placement.mode !== 'badge'
       const dateVisible = placement.mode !== 'badge'
+      const cardTitle = anonymized ? `Current clue: ${placement.monarch.dateLabel}` : `${placement.monarch.name}: ${placement.monarch.dateLabel}`
+      const ariaLabel = anonymized ? `Current clue. ${placement.monarch.dateLabel}` : `Open details for ${placement.monarch.name}`
+      const interactionAttrs = anonymized
+        ? ''
+        : `
+          tabindex="0"
+          role="button"
+          data-monarch-id="${placement.monarch.id}"
+        `
       const style = mobileTimeline
         ? `top:${placement.center}%; left:${trackOffset}px; width:${footprint.width}px;`
         : `left:${placement.center}%; top:${trackOffset}px; width:${footprint.width}px;`
@@ -569,17 +623,15 @@ function renderMonarchCards(items: Monarch[]): string {
         <article
           class="monarch-card monarch-card--${placement.mode} ${recent ? 'monarch-card--recent' : ''} ${revealAnimation ? 'monarch-card--reveal' : ''}"
           style="${style}"
-          title="${placement.monarch.name}: ${placement.monarch.dateLabel}"
-          tabindex="0"
-          role="button"
-          data-monarch-id="${placement.monarch.id}"
-          aria-label="Open details for ${placement.monarch.name}"
+          title="${cardTitle}"
+          aria-label="${ariaLabel}"
+          ${interactionAttrs}
         >
           <div class="monarch-card__portrait">
             ${
-              imageVisible && imageUrl
+              imageVisible && !anonymized && imageUrl
                 ? `<img src="${imageUrl}" alt="${placement.monarch.name}" loading="lazy" />`
-                : `<span>${placement.monarch.portraitFallback}</span>`
+                : `<span>${anonymized ? '?' : placement.monarch.portraitFallback}</span>`
             }
           </div>
           ${
@@ -587,7 +639,7 @@ function renderMonarchCards(items: Monarch[]): string {
               ? ''
               : `
                 <div class="monarch-card__text">
-                  <strong>${placement.monarch.name}</strong>
+                  <strong>${anonymized ? '?' : placement.monarch.name}</strong>
                   ${dateVisible ? `<span>${placement.monarch.dateLabel}</span>` : ''}
                 </div>
               `
@@ -795,6 +847,7 @@ function goToNextQuestion(): void {
   state.resultKind = null
   state.revealAnimationMonarchId = null
   state.selectedMonarchId = null
+  state.hintVisible = false
 
   const nextQuestionId = getNextQuestionId()
   if (!nextQuestionId) {
@@ -941,7 +994,7 @@ function getCardMode(widthPx: number, isRecent: boolean): CardMode | null {
 }
 
 function resolveCardCollisions(
-  placements: Array<{ monarch: Monarch; center: number; centerPx: number; lane: number; widthPx: number; mode: CardMode }>,
+  placements: Array<{ monarch: Monarch; center: number; centerPx: number; lane: number; widthPx: number; mode: CardMode; anonymized?: boolean }>,
 ): CardPlacement[] {
   const lanes = new Map<number, typeof placements>()
 
@@ -967,7 +1020,7 @@ function resolveCardCollisions(
         const availableStack = stackEnds.findIndex((nextFree) => leftEdge >= nextFree)
 
         if (availableStack !== -1) {
-          resolved.push({ monarch: candidate.monarch, center: candidate.center, lane, stack: availableStack, mode })
+          resolved.push({ monarch: candidate.monarch, center: candidate.center, lane, stack: availableStack, mode, anonymized: candidate.anonymized })
           stackEnds[availableStack] = rightEdge + 12
           break
         }
