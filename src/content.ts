@@ -1,51 +1,4 @@
-import type { Monarch, ReignRange } from './data'
-
-export const reignExactDates: Record<string, string[]> = {
-  'william-i': ['14 October 1066 to 9 September 1087'],
-  'william-ii': ['26 September 1087 to 2 August 1100'],
-  'henry-i': ['5 August 1100 to 1 December 1135'],
-  stephen: ['22 December 1135 to 25 October 1154'],
-  matilda: ['7 April 1141 to 1 November 1141'],
-  'henry-ii': ['19 December 1154 to 6 July 1189'],
-  'richard-i': ['3 September 1189 to 6 April 1199'],
-  john: ['27 May 1199 to 19 October 1216'],
-  'henry-iii': ['28 October 1216 to 16 November 1272'],
-  'edward-i': ['20 November 1272 to 7 July 1307'],
-  'edward-ii': ['8 July 1307 to 25 January 1327'],
-  'edward-iii': ['25 January 1327 to 21 June 1377'],
-  'richard-ii': ['21 June 1377 to 29 September 1399'],
-  'henry-iv': ['30 September 1399 to 20 March 1413'],
-  'henry-v': ['21 March 1413 to 31 August 1422'],
-  'henry-vi': ['1 September 1422 to 4 March 1461', '3 October 1470 to 11 April 1471'],
-  'edward-iv': ['4 March 1461 to 3 October 1470', '11 April 1471 to 9 April 1483'],
-  'edward-v': ['9 April 1483 to 25 June 1483'],
-  'richard-iii': ['26 June 1483 to 22 August 1485'],
-  'henry-vii': ['22 August 1485 to 21 April 1509'],
-  'henry-viii': ['22 April 1509 to 28 January 1547'],
-  'edward-vi': ['28 January 1547 to 6 July 1553'],
-  'jane-grey': ['10 July 1553 to 19 July 1553'],
-  'mary-i': ['19 July 1553 to 17 November 1558'],
-  'elizabeth-i': ['17 November 1558 to 24 March 1603'],
-  'james-i': ['24 March 1603 to 27 March 1625'],
-  'charles-i': ['27 March 1625 to 30 January 1649'],
-  'charles-ii': ['29 May 1660 to 6 February 1685'],
-  'james-ii': ['6 February 1685 to 11 December 1688'],
-  'william-iii': ['13 February 1689 to 8 March 1702'],
-  'mary-ii': ['13 February 1689 to 28 December 1694'],
-  anne: ['8 March 1702 to 1 August 1714'],
-  'george-i': ['1 August 1714 to 11 June 1727'],
-  'george-ii': ['11 June 1727 to 25 October 1760'],
-  'george-iii': ['25 October 1760 to 29 January 1820'],
-  'george-iv': ['29 January 1820 to 26 June 1830'],
-  'william-iv': ['26 June 1830 to 20 June 1837'],
-  victoria: ['20 June 1837 to 22 January 1901'],
-  'edward-vii': ['22 January 1901 to 6 May 1910'],
-  'george-v': ['6 May 1910 to 20 January 1936'],
-  'edward-viii': ['20 January 1936 to 11 December 1936'],
-  'george-vi': ['11 December 1936 to 6 February 1952'],
-  'elizabeth-ii': ['6 February 1952 to 8 September 2022'],
-  'charles-iii': ['8 September 2022 to present'],
-}
+import { formatReignRange, type Monarch, type ReignRange } from './data'
 
 const bioOverrides: Record<string, string> = {
   'william-i': "William the Conqueror won the Battle of Hastings in 1066 and changed England a lot. He brought in Norman rule, built castles, and ordered the Domesday Book so he could count land, people, and wealth.",
@@ -105,7 +58,7 @@ const eventSummaryOverrides: Record<string, string> = {
   becket: 'A clash between crown and church ended in shocking violence.',
   ireland: 'Royal power was asserted across the Irish Sea.',
   'third-crusade': 'This reign is closely linked with crusading warfare abroad.',
-  lionheart: 'The ruler gained a lasting warrior reputation.',
+  captured: 'The ruler was captured while returning from crusade.',
   'magna-carta': 'The crown was forced to accept limits on its power.',
   'barons-war': 'Powerful nobles openly fought the ruler.',
   montfort: 'A landmark assembly helped shape the future of Parliament.',
@@ -170,8 +123,8 @@ const eventSummaryOverrides: Record<string, string> = {
   'coronation-2023': 'A modern coronation renewed ancient ceremony.',
 }
 
-export function getExactReignLabel(monarchId: string, reignIndex: number, reign: ReignRange): string {
-  return reignExactDates[monarchId]?.[reignIndex] ?? reign.label
+export function getExactReignLabel(_monarchId: string, _reignIndex: number, reign: ReignRange): string {
+  return formatReignRange(reign)
 }
 
 export function getMonarchExactReigns(monarch: Monarch): string[] {

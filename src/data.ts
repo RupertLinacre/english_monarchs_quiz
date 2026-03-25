@@ -1,6 +1,6 @@
 export interface ReignRange {
-  start: number
-  end: number
+  startDate: string
+  endDate: string
   label: string
 }
 
@@ -35,6 +35,47 @@ const currentYear = new Date().getFullYear()
 
 export const WORLD_START_YEAR = 1050
 export const WORLD_END_YEAR = currentYear + 1
+export const WORLD_END_DATE = `${currentYear + 1}-01-01`
+
+const fullDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+function parseIsoDateParts(isoDate: string): { year: number; month: number; day: number } {
+  const match = /^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})$/.exec(isoDate)
+
+  if (!match?.groups) {
+    throw new Error(`Invalid ISO date: ${isoDate}`)
+  }
+
+  return {
+    year: Number(match.groups.year),
+    month: Number(match.groups.month),
+    day: Number(match.groups.day),
+  }
+}
+
+export function isoDateToTimelineYear(isoDate: string): number {
+  const { year, month, day } = parseIsoDateParts(isoDate)
+  const dateUtc = Date.UTC(year, month - 1, day)
+  const yearStartUtc = Date.UTC(year, 0, 1)
+  const nextYearStartUtc = Date.UTC(year + 1, 0, 1)
+
+  return year + (dateUtc - yearStartUtc) / (nextYearStartUtc - yearStartUtc)
+}
+
+export function formatIsoDate(isoDate: string): string {
+  const { year, month, day } = parseIsoDateParts(isoDate)
+  return fullDateFormatter.format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+export function formatReignRange(reign: ReignRange): string {
+  const endLabel = reign.endDate === WORLD_END_DATE ? 'present' : formatIsoDate(reign.endDate)
+  return `${formatIsoDate(reign.startDate)} to ${endLabel}`
+}
 
 export const housePeriods: HousePeriod[] = [
   { id: 'normandy', label: 'House of Normandy', start: 1066, end: 1154, color: '#6c4b3a' },
@@ -58,7 +99,8 @@ export const monarchs: Monarch[] = [
     id: 'william-i',
     name: 'William I',
     house: 'House of Normandy',
-    reigns: [{ start: 1066.8, end: 1087.7, label: '1066-1087' }],
+    // Uses the coronation date rather than the Hastings/regnal-year convention.
+    reigns: [{ startDate: '1066-12-25', endDate: '1087-09-09', label: '1066-1087' }],
     dateLabel: '1066-1087',
     aliases: ['william the conqueror', 'william conqueror'],
     wikipediaTitle: 'William_the_Conqueror',
@@ -72,7 +114,7 @@ export const monarchs: Monarch[] = [
     id: 'william-ii',
     name: 'William II',
     house: 'House of Normandy',
-    reigns: [{ start: 1087.7, end: 1100.7, label: '1087-1100' }],
+    reigns: [{ startDate: '1087-09-26', endDate: '1100-08-02', label: '1087-1100' }],
     dateLabel: '1087-1100',
     aliases: ['william rufus'],
     wikipediaTitle: 'William_II_of_England',
@@ -83,7 +125,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-i',
     name: 'Henry I',
     house: 'House of Normandy',
-    reigns: [{ start: 1100.7, end: 1135.95, label: '1100-1135' }],
+    reigns: [{ startDate: '1100-08-05', endDate: '1135-12-01', label: '1100-1135' }],
     dateLabel: '1100-1135',
     aliases: ['henry beauclerc'],
     wikipediaTitle: 'Henry_I_of_England',
@@ -97,7 +139,7 @@ export const monarchs: Monarch[] = [
     id: 'stephen',
     name: 'Stephen',
     house: 'House of Blois',
-    reigns: [{ start: 1135.95, end: 1154.8, label: '1135-1154' }],
+    reigns: [{ startDate: '1135-12-26', endDate: '1154-10-25', label: '1135-1154' }],
     dateLabel: '1135-1154',
     aliases: ['king stephen', 'stephen of blois'],
     wikipediaTitle: 'Stephen,_King_of_England',
@@ -108,7 +150,7 @@ export const monarchs: Monarch[] = [
     id: 'matilda',
     name: 'Empress Matilda',
     house: 'House of Normandy',
-    reigns: [{ start: 1141.1, end: 1141.75, label: '1141' }],
+    reigns: [{ startDate: '1141-04-08', endDate: '1141-11-01', label: '1141' }],
     dateLabel: '1141',
     aliases: ['matilda', 'empress maud', 'maud'],
     wikipediaTitle: 'Empress_Matilda',
@@ -119,7 +161,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-ii',
     name: 'Henry II',
     house: 'Angevins',
-    reigns: [{ start: 1154.8, end: 1189.5, label: '1154-1189' }],
+    reigns: [{ startDate: '1154-12-19', endDate: '1189-07-06', label: '1154-1189' }],
     dateLabel: '1154-1189',
     aliases: ['henry fitzempress'],
     wikipediaTitle: 'Henry_II_of_England',
@@ -133,7 +175,7 @@ export const monarchs: Monarch[] = [
     id: 'richard-i',
     name: 'Richard I',
     house: 'Angevins',
-    reigns: [{ start: 1189.5, end: 1199.25, label: '1189-1199' }],
+    reigns: [{ startDate: '1189-09-03', endDate: '1199-04-06', label: '1189-1199' }],
     dateLabel: '1189-1199',
     aliases: ['richard the lionheart', 'lionheart'],
     wikipediaTitle: 'Richard_I_of_England',
@@ -147,7 +189,7 @@ export const monarchs: Monarch[] = [
     id: 'john',
     name: 'John',
     house: 'Angevins',
-    reigns: [{ start: 1199.25, end: 1216.75, label: '1199-1216' }],
+    reigns: [{ startDate: '1199-05-27', endDate: '1216-10-19', label: '1199-1216' }],
     dateLabel: '1199-1216',
     aliases: ['king john', 'john lackland'],
     wikipediaTitle: 'John,_King_of_England',
@@ -161,7 +203,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-iii',
     name: 'Henry III',
     house: 'Plantagenets',
-    reigns: [{ start: 1216.75, end: 1272.9, label: '1216-1272' }],
+    reigns: [{ startDate: '1216-10-28', endDate: '1272-11-16', label: '1216-1272' }],
     dateLabel: '1216-1272',
     aliases: [],
     wikipediaTitle: 'Henry_III_of_England',
@@ -175,7 +217,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-i',
     name: 'Edward I',
     house: 'Plantagenets',
-    reigns: [{ start: 1272.9, end: 1307.55, label: '1272-1307' }],
+    reigns: [{ startDate: '1272-11-20', endDate: '1307-07-07', label: '1272-1307' }],
     dateLabel: '1272-1307',
     aliases: ['edward longshanks', 'longshanks'],
     wikipediaTitle: 'Edward_I_of_England',
@@ -189,7 +231,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-ii',
     name: 'Edward II',
     house: 'Plantagenets',
-    reigns: [{ start: 1307.55, end: 1327.1, label: '1307-1327' }],
+    reigns: [{ startDate: '1307-07-08', endDate: '1327-01-20', label: '1307-1327' }],
     dateLabel: '1307-1327',
     aliases: [],
     wikipediaTitle: 'Edward_II_of_England',
@@ -200,7 +242,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-iii',
     name: 'Edward III',
     house: 'Plantagenets',
-    reigns: [{ start: 1327.1, end: 1377.5, label: '1327-1377' }],
+    reigns: [{ startDate: '1327-01-25', endDate: '1377-06-21', label: '1327-1377' }],
     dateLabel: '1327-1377',
     aliases: [],
     wikipediaTitle: 'Edward_III_of_England',
@@ -214,7 +256,7 @@ export const monarchs: Monarch[] = [
     id: 'richard-ii',
     name: 'Richard II',
     house: 'Plantagenets',
-    reigns: [{ start: 1377.5, end: 1399.8, label: '1377-1399' }],
+    reigns: [{ startDate: '1377-06-22', endDate: '1399-09-29', label: '1377-1399' }],
     dateLabel: '1377-1399',
     aliases: [],
     wikipediaTitle: 'Richard_II_of_England',
@@ -228,7 +270,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-iv',
     name: 'Henry IV',
     house: 'Lancastrians',
-    reigns: [{ start: 1399.8, end: 1413.2, label: '1399-1413' }],
+    reigns: [{ startDate: '1399-09-30', endDate: '1413-03-20', label: '1399-1413' }],
     dateLabel: '1399-1413',
     aliases: [],
     wikipediaTitle: 'Henry_IV_of_England',
@@ -239,7 +281,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-v',
     name: 'Henry V',
     house: 'Lancastrians',
-    reigns: [{ start: 1413.2, end: 1422.65, label: '1413-1422' }],
+    reigns: [{ startDate: '1413-03-21', endDate: '1422-08-31', label: '1413-1422' }],
     dateLabel: '1413-1422',
     aliases: [],
     wikipediaTitle: 'Henry_V_of_England',
@@ -254,8 +296,8 @@ export const monarchs: Monarch[] = [
     name: 'Henry VI',
     house: 'Lancastrians',
     reigns: [
-      { start: 1422.65, end: 1461.2, label: '1422-1461' },
-      { start: 1470.8, end: 1471.3, label: '1470-1471' },
+      { startDate: '1422-09-01', endDate: '1461-03-04', label: '1422-1461' },
+      { startDate: '1470-10-09', endDate: '1471-04-11', label: '1470-1471' },
     ],
     dateLabel: '1422-1461, 1470-1471',
     aliases: [],
@@ -271,8 +313,8 @@ export const monarchs: Monarch[] = [
     name: 'Edward IV',
     house: 'Yorkists',
     reigns: [
-      { start: 1461.2, end: 1470.8, label: '1461-1470' },
-      { start: 1471.3, end: 1483.35, label: '1471-1483' },
+      { startDate: '1461-03-04', endDate: '1470-10-03', label: '1461-1470' },
+      { startDate: '1471-04-11', endDate: '1483-04-09', label: '1471-1483' },
     ],
     dateLabel: '1461-1470, 1471-1483',
     aliases: [],
@@ -287,7 +329,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-v',
     name: 'Edward V',
     house: 'Yorkists',
-    reigns: [{ start: 1483.35, end: 1483.52, label: '1483' }],
+    reigns: [{ startDate: '1483-04-09', endDate: '1483-06-25', label: '1483' }],
     dateLabel: '1483',
     aliases: [],
     wikipediaTitle: 'Edward_V_of_England',
@@ -298,7 +340,7 @@ export const monarchs: Monarch[] = [
     id: 'richard-iii',
     name: 'Richard III',
     house: 'Yorkists',
-    reigns: [{ start: 1483.52, end: 1485.65, label: '1483-1485' }],
+    reigns: [{ startDate: '1483-06-26', endDate: '1485-08-22', label: '1483-1485' }],
     dateLabel: '1483-1485',
     aliases: [],
     wikipediaTitle: 'Richard_III_of_England',
@@ -312,7 +354,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-vii',
     name: 'Henry VII',
     house: 'Tudors',
-    reigns: [{ start: 1485.65, end: 1509.25, label: '1485-1509' }],
+    reigns: [{ startDate: '1485-08-22', endDate: '1509-04-21', label: '1485-1509' }],
     dateLabel: '1485-1509',
     aliases: [],
     wikipediaTitle: 'Henry_VII_of_England',
@@ -326,7 +368,7 @@ export const monarchs: Monarch[] = [
     id: 'henry-viii',
     name: 'Henry VIII',
     house: 'Tudors',
-    reigns: [{ start: 1509.25, end: 1547.05, label: '1509-1547' }],
+    reigns: [{ startDate: '1509-04-22', endDate: '1547-01-28', label: '1509-1547' }],
     dateLabel: '1509-1547',
     aliases: [],
     wikipediaTitle: 'Henry_VIII',
@@ -340,7 +382,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-vi',
     name: 'Edward VI',
     house: 'Tudors',
-    reigns: [{ start: 1547.05, end: 1553.52, label: '1547-1553' }],
+    reigns: [{ startDate: '1547-01-28', endDate: '1553-07-06', label: '1547-1553' }],
     dateLabel: '1547-1553',
     aliases: [],
     wikipediaTitle: 'Edward_VI',
@@ -354,7 +396,7 @@ export const monarchs: Monarch[] = [
     id: 'jane-grey',
     name: 'Lady Jane Grey',
     house: 'Tudors',
-    reigns: [{ start: 1553.52, end: 1553.55, label: '1553' }],
+    reigns: [{ startDate: '1553-07-10', endDate: '1553-07-19', label: '1553' }],
     dateLabel: '1553',
     aliases: ['jane grey', 'queen jane'],
     wikipediaTitle: 'Lady_Jane_Grey',
@@ -365,7 +407,7 @@ export const monarchs: Monarch[] = [
     id: 'mary-i',
     name: 'Mary I',
     house: 'Tudors',
-    reigns: [{ start: 1553.55, end: 1558.85, label: '1553-1558' }],
+    reigns: [{ startDate: '1553-07-19', endDate: '1558-11-17', label: '1553-1558' }],
     dateLabel: '1553-1558',
     aliases: ['bloody mary'],
     wikipediaTitle: 'Mary_I_of_England',
@@ -379,7 +421,7 @@ export const monarchs: Monarch[] = [
     id: 'elizabeth-i',
     name: 'Elizabeth I',
     house: 'Tudors',
-    reigns: [{ start: 1558.85, end: 1603.22, label: '1558-1603' }],
+    reigns: [{ startDate: '1558-11-17', endDate: '1603-03-24', label: '1558-1603' }],
     dateLabel: '1558-1603',
     aliases: ['gloriana', 'good queen bess'],
     wikipediaTitle: 'Elizabeth_I',
@@ -393,7 +435,7 @@ export const monarchs: Monarch[] = [
     id: 'james-i',
     name: 'James I',
     house: 'Stuarts',
-    reigns: [{ start: 1603.22, end: 1625.25, label: '1603-1625' }],
+    reigns: [{ startDate: '1603-03-24', endDate: '1625-03-27', label: '1603-1625' }],
     dateLabel: '1603-1625',
     aliases: ['james vi and i', 'james 6 and 1'],
     wikipediaTitle: 'James_VI_and_I',
@@ -407,7 +449,7 @@ export const monarchs: Monarch[] = [
     id: 'charles-i',
     name: 'Charles I',
     house: 'Stuarts',
-    reigns: [{ start: 1625.25, end: 1649.08, label: '1625-1649' }],
+    reigns: [{ startDate: '1625-03-27', endDate: '1649-01-30', label: '1625-1649' }],
     dateLabel: '1625-1649',
     aliases: [],
     wikipediaTitle: 'Charles_I_of_England',
@@ -421,7 +463,8 @@ export const monarchs: Monarch[] = [
     id: 'charles-ii',
     name: 'Charles II',
     house: 'Stuarts',
-    reigns: [{ start: 1660.41, end: 1685.1, label: '1660-1685' }],
+    // Deliberately modeled from the 1660 Restoration rather than the de jure 1649 regnal-year start.
+    reigns: [{ startDate: '1660-05-29', endDate: '1685-02-06', label: '1660-1685' }],
     dateLabel: '1660-1685',
     aliases: ['the merry monarch'],
     wikipediaTitle: 'Charles_II_of_England',
@@ -435,7 +478,7 @@ export const monarchs: Monarch[] = [
     id: 'james-ii',
     name: 'James II',
     house: 'Stuarts',
-    reigns: [{ start: 1685.1, end: 1688.92, label: '1685-1688' }],
+    reigns: [{ startDate: '1685-02-06', endDate: '1688-12-11', label: '1685-1688' }],
     dateLabel: '1685-1688',
     aliases: [],
     wikipediaTitle: 'James_II_of_England',
@@ -446,7 +489,7 @@ export const monarchs: Monarch[] = [
     id: 'william-iii',
     name: 'William III',
     house: 'Stuarts',
-    reigns: [{ start: 1689.12, end: 1702.2, label: '1689-1702' }],
+    reigns: [{ startDate: '1689-02-13', endDate: '1702-03-08', label: '1689-1702' }],
     dateLabel: '1689-1702',
     aliases: ['william of orange'],
     wikipediaTitle: 'William_III_of_England',
@@ -460,7 +503,7 @@ export const monarchs: Monarch[] = [
     id: 'mary-ii',
     name: 'Mary II',
     house: 'Stuarts',
-    reigns: [{ start: 1689.12, end: 1694.95, label: '1689-1694' }],
+    reigns: [{ startDate: '1689-02-13', endDate: '1694-12-28', label: '1689-1694' }],
     dateLabel: '1689-1694',
     aliases: [],
     wikipediaTitle: 'Mary_II_of_England',
@@ -471,7 +514,7 @@ export const monarchs: Monarch[] = [
     id: 'anne',
     name: 'Anne',
     house: 'Stuarts',
-    reigns: [{ start: 1702.2, end: 1714.6, label: '1702-1714' }],
+    reigns: [{ startDate: '1702-03-08', endDate: '1714-08-01', label: '1702-1714' }],
     dateLabel: '1702-1714',
     aliases: ['queen anne'],
     wikipediaTitle: 'Anne,_Queen_of_Great_Britain',
@@ -485,7 +528,7 @@ export const monarchs: Monarch[] = [
     id: 'george-i',
     name: 'George I',
     house: 'Hanoverians',
-    reigns: [{ start: 1714.6, end: 1727.45, label: '1714-1727' }],
+    reigns: [{ startDate: '1714-08-01', endDate: '1727-06-11', label: '1714-1727' }],
     dateLabel: '1714-1727',
     aliases: [],
     wikipediaTitle: 'George_I_of_Great_Britain',
@@ -496,7 +539,7 @@ export const monarchs: Monarch[] = [
     id: 'george-ii',
     name: 'George II',
     house: 'Hanoverians',
-    reigns: [{ start: 1727.45, end: 1760.75, label: '1727-1760' }],
+    reigns: [{ startDate: '1727-06-11', endDate: '1760-10-25', label: '1727-1760' }],
     dateLabel: '1727-1760',
     aliases: [],
     wikipediaTitle: 'George_II_of_Great_Britain',
@@ -507,7 +550,7 @@ export const monarchs: Monarch[] = [
     id: 'george-iii',
     name: 'George III',
     house: 'Hanoverians',
-    reigns: [{ start: 1760.75, end: 1820.1, label: '1760-1820' }],
+    reigns: [{ startDate: '1760-10-25', endDate: '1820-01-29', label: '1760-1820' }],
     dateLabel: '1760-1820',
     aliases: [],
     wikipediaTitle: 'George_III',
@@ -521,7 +564,7 @@ export const monarchs: Monarch[] = [
     id: 'george-iv',
     name: 'George IV',
     house: 'Hanoverians',
-    reigns: [{ start: 1820.1, end: 1830.5, label: '1820-1830' }],
+    reigns: [{ startDate: '1820-01-29', endDate: '1830-06-26', label: '1820-1830' }],
     dateLabel: '1820-1830',
     aliases: [],
     wikipediaTitle: 'George_IV',
@@ -532,7 +575,7 @@ export const monarchs: Monarch[] = [
     id: 'william-iv',
     name: 'William IV',
     house: 'Hanoverians',
-    reigns: [{ start: 1830.5, end: 1837.48, label: '1830-1837' }],
+    reigns: [{ startDate: '1830-06-26', endDate: '1837-06-20', label: '1830-1837' }],
     dateLabel: '1830-1837',
     aliases: [],
     wikipediaTitle: 'William_IV',
@@ -543,7 +586,7 @@ export const monarchs: Monarch[] = [
     id: 'victoria',
     name: 'Victoria',
     house: 'Hanoverians',
-    reigns: [{ start: 1837.48, end: 1901.02, label: '1837-1901' }],
+    reigns: [{ startDate: '1837-06-20', endDate: '1901-01-22', label: '1837-1901' }],
     dateLabel: '1837-1901',
     aliases: ['queen victoria'],
     wikipediaTitle: 'Queen_Victoria',
@@ -557,7 +600,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-vii',
     name: 'Edward VII',
     house: 'Saxe-Coburg-Gotha',
-    reigns: [{ start: 1901.02, end: 1910.37, label: '1901-1910' }],
+    reigns: [{ startDate: '1901-01-22', endDate: '1910-05-06', label: '1901-1910' }],
     dateLabel: '1901-1910',
     aliases: [],
     wikipediaTitle: 'Edward_VII',
@@ -568,7 +611,7 @@ export const monarchs: Monarch[] = [
     id: 'george-v',
     name: 'George V',
     house: 'Windsor',
-    reigns: [{ start: 1910.37, end: 1936.02, label: '1910-1936' }],
+    reigns: [{ startDate: '1910-05-06', endDate: '1936-01-20', label: '1910-1936' }],
     dateLabel: '1910-1936',
     aliases: [],
     wikipediaTitle: 'George_V',
@@ -582,7 +625,7 @@ export const monarchs: Monarch[] = [
     id: 'edward-viii',
     name: 'Edward VIII',
     house: 'Windsor',
-    reigns: [{ start: 1936.02, end: 1936.95, label: '1936' }],
+    reigns: [{ startDate: '1936-01-20', endDate: '1936-12-11', label: '1936' }],
     dateLabel: '1936',
     aliases: [],
     wikipediaTitle: 'Edward_VIII',
@@ -593,7 +636,7 @@ export const monarchs: Monarch[] = [
     id: 'george-vi',
     name: 'George VI',
     house: 'Windsor',
-    reigns: [{ start: 1936.95, end: 1952.1, label: '1936-1952' }],
+    reigns: [{ startDate: '1936-12-11', endDate: '1952-02-06', label: '1936-1952' }],
     dateLabel: '1936-1952',
     aliases: [],
     wikipediaTitle: 'George_VI',
@@ -607,7 +650,7 @@ export const monarchs: Monarch[] = [
     id: 'elizabeth-ii',
     name: 'Elizabeth II',
     house: 'Windsor',
-    reigns: [{ start: 1952.1, end: 2022.69, label: '1952-2022' }],
+    reigns: [{ startDate: '1952-02-06', endDate: '2022-09-08', label: '1952-2022' }],
     dateLabel: '1952-2022',
     aliases: [],
     wikipediaTitle: 'Elizabeth_II',
@@ -621,7 +664,7 @@ export const monarchs: Monarch[] = [
     id: 'charles-iii',
     name: 'Charles III',
     house: 'Windsor',
-    reigns: [{ start: 2022.69, end: WORLD_END_YEAR, label: '2022-present' }],
+    reigns: [{ startDate: '2022-09-08', endDate: WORLD_END_DATE, label: '2022-present' }],
     dateLabel: '2022-present',
     aliases: [],
     wikipediaTitle: 'Charles_III',

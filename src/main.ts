@@ -1,6 +1,6 @@
 import './style.css'
 import { getEventSummary, getExactReignLabel, getMonarchBio, getMonarchExactReigns } from './content'
-import { housePeriods, monarchs, WORLD_END_YEAR, WORLD_START_YEAR, type HousePeriod, type Monarch, type ReignRange } from './data'
+import { housePeriods, isoDateToTimelineYear, monarchs, WORLD_END_YEAR, WORLD_START_YEAR, type HousePeriod, type Monarch, type ReignRange } from './data'
 
 type ViewState = {
   start: number
@@ -54,6 +54,7 @@ const WORLD_SPAN = WORLD_END_YEAR - WORLD_START_YEAR
 const MIN_VIEW_SPAN = 8
 const eventLanes = 4
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin)
+const timelineYearCache = new Map<string, number>()
 const eventExplainers: Record<string, string> = {
   hastings: 'A huge invasion battle decided the crown.',
   domesday: 'This was a giant survey showing who owned land and animals.',
@@ -65,7 +66,7 @@ const eventExplainers: Record<string, string> = {
   becket: 'Thomas Becket was killed after arguing with the crown about power.',
   ireland: 'The crown asserted its authority in Ireland.',
   'third-crusade': 'The ruler spent much of the reign in a famous holy war abroad.',
-  lionheart: 'The ruler gained a lasting reputation as a brave warrior.',
+  captured: 'The ruler was captured while returning from crusade.',
   'magna-carta': 'The king had to promise not to be unfair or too powerful.',
   'barons-war': 'Powerful lords fought the king over how he ruled.',
   montfort: 'Important people met to help choose how the country should be run.',
@@ -218,11 +219,14 @@ app.innerHTML = `
     <section class="sources">
       <p>
         <strong>Reign data:</strong>
-        <a href="https://www.royal.uk/kings-and-queens-1066" target="_blank" rel="noreferrer">Kings and Queens from 1066</a>,
-        plus official pages for
-        <a href="https://www.royal.uk/encyclopedia/queen-elizabeth-ii" target="_blank" rel="noreferrer">Elizabeth II</a>
+        <a href="https://en.wikipedia.org/wiki/Regnal_years_of_English_and_British_monarchs" target="_blank" rel="noreferrer">Regnal years of English and British monarchs</a>,
+        with conventional timeline choices for
+        <a href="https://www.westminster-abbey.org/history/coronations-at-the-abbey/coronation-stories" target="_blank" rel="noreferrer">William I</a>,
+        <a href="https://www.britannica.com/biography/Charles-II-king-of-Great-Britain-and-Ireland" target="_blank" rel="noreferrer">Charles II</a>,
+        <a href="https://en.wikipedia.org/wiki/Empress_Matilda" target="_blank" rel="noreferrer">Empress Matilda</a>,
+        <a href="https://en.wikipedia.org/wiki/Edward_V" target="_blank" rel="noreferrer">Edward V</a>,
         and
-        <a href="https://www.royal.uk/100-coronation-facts" target="_blank" rel="noreferrer">Charles III</a>.
+        <a href="https://en.wikipedia.org/wiki/Lady_Jane_Grey" target="_blank" rel="noreferrer">Lady Jane Grey</a>.
       </p>
       <p><strong>Portraits:</strong> downloaded from Wikimedia sources into this project, with a monogram fallback for any missing image.</p>
     </section>
@@ -522,7 +526,7 @@ function renderMonarchSegments(items: Monarch[]): string {
       const lane = monarchLanes.get(monarch.id) ?? 0
       return monarch.reigns
         .map((reign, reignIndex) => ({ reign, reignIndex }))
-        .filter(({ reign }) => overlaps(reign.start, reign.end, state.view.start, state.view.end))
+        .filter(({ reign }) => overlaps(getReignStartYear(reign), getReignEndYear(reign), state.view.start, state.view.end))
         .map(({ reign, reignIndex }) => renderSegment(monarch, reign, reignIndex, lane))
         .join('')
     })
@@ -530,7 +534,7 @@ function renderMonarchSegments(items: Monarch[]): string {
 }
 
 function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, lane: number): string {
-  const metrics = getMetrics(reign.start, reign.end)
+  const metrics = getMetrics(getReignStartYear(reign), getReignEndYear(reign))
   if (!metrics) return ''
 
   const mobileTimeline = isMobileTimeline()
@@ -889,8 +893,8 @@ function focusCurrentQuestion(animate: boolean, duration = 520): void {
 }
 
 function getFocusedView(monarch: Monarch): ViewState {
-  const start = Math.min(...monarch.reigns.map((reign) => reign.start))
-  const end = Math.max(...monarch.reigns.map((reign) => reign.end))
+  const start = Math.min(...monarch.reigns.map((reign) => getReignStartYear(reign)))
+  const end = Math.max(...monarch.reigns.map((reign) => getReignEndYear(reign)))
   return sanitizeView(start - 50, end + 50)
 }
 
@@ -1053,7 +1057,7 @@ function getCardFootprint(mode: CardMode): { width: number; height: number } {
 
 function getBestVisibleCardMetrics(monarch: Monarch): { leftPct: number; widthPct: number; leftPx: number; widthPx: number } | null {
   const visibleReigns = monarch.reigns
-    .map((reign) => getMetrics(reign.start, reign.end))
+    .map((reign) => getMetrics(getReignStartYear(reign), getReignEndYear(reign)))
     .filter((metrics): metrics is NonNullable<typeof metrics> => metrics !== null)
 
   if (visibleReigns.length === 0) {
@@ -1237,11 +1241,28 @@ function assignMonarchLanes(items: Monarch[]): Map<string, number> {
 }
 
 function getMonarchStart(monarch: Monarch): number {
-  return Math.min(...monarch.reigns.map((reign) => reign.start))
+  return Math.min(...monarch.reigns.map((reign) => getReignStartYear(reign)))
 }
 
 function getMonarchEnd(monarch: Monarch): number {
-  return Math.max(...monarch.reigns.map((reign) => reign.end))
+  return Math.max(...monarch.reigns.map((reign) => getReignEndYear(reign)))
+}
+
+function getTimelineYear(isoDate: string): number {
+  const cached = timelineYearCache.get(isoDate)
+  if (cached !== undefined) return cached
+
+  const timelineYear = isoDateToTimelineYear(isoDate)
+  timelineYearCache.set(isoDate, timelineYear)
+  return timelineYear
+}
+
+function getReignStartYear(reign: ReignRange): number {
+  return getTimelineYear(reign.startDate)
+}
+
+function getReignEndYear(reign: ReignRange): number {
+  return getTimelineYear(reign.endDate)
 }
 
 function formatElapsed(ms: number): string {
