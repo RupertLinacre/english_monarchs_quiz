@@ -171,6 +171,9 @@ app.innerHTML = `
     <section class="quiz-entry">
       <div class="quiz-entry__header">
         <h1>Name the monarch</h1>
+        <p class="quiz-entry__timeline-hint">
+          Click on a bar in the timeline to choose a different monarch to name
+        </p>
         <section class="summary-strip" aria-label="Quiz summary">
           <strong id="question-value" class="summary-pill summary-pill--strong">Q 1/${monarchs.length}</strong>
           <span id="score-value" class="summary-pill">0 correct</span>
@@ -408,43 +411,39 @@ function renderQuestionPanel(): string {
           <div class="quiz-panel__section">
             <div class="quiz-panel__section-header">
               <span class="quiz-panel__label">${reignLabel}</span>
-              ${
-                answerRevealed
-                  ? ''
-                  : `<button
+              ${answerRevealed
+      ? ''
+      : `<button
                       class="quiz-panel__clue-button ${portraitRevealed ? 'quiz-panel__clue-button--active' : ''}"
                       type="button"
                       data-toggle-hint="true"
                       aria-expanded="${portraitRevealed ? 'true' : 'false'}"
                     >Clue</button>`
-              }
+    }
             </div>
             <div class="quiz-panel__chips">
               ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
             </div>
-            ${
-              !answerRevealed && portraitRevealed
-                ? `
+            ${!answerRevealed && portraitRevealed
+      ? `
                   <div class="quiz-panel__portrait-clue">
-                    ${
-                      portraitUrl
-                        ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
-                        : '<div class="quiz-panel__portrait-fallback">Portrait hint unavailable for this reign.</div>'
-                    }
+                    ${portraitUrl
+        ? `<img src="${portraitUrl}" alt="Portrait hint for the current monarch" loading="lazy" />`
+        : '<div class="quiz-panel__portrait-fallback">Portrait hint unavailable for this reign.</div>'
+      }
                   </div>
                 `
-                : ''
-            }
+      : ''
+    }
           </div>
 
           <div class="quiz-panel__section">
             <span class="quiz-panel__label">What happened in this reign</span>
             <ul class="quiz-panel__notes">
-              ${
-                eventNotes.length > 0
-                  ? eventNotes
-                      .map(
-                        (event) => `
+              ${eventNotes.length > 0
+      ? eventNotes
+        .map(
+          (event) => `
                           <li class="quiz-panel__note">
                             <div class="quiz-panel__note-heading">
                               <strong>${event.year}</strong>
@@ -453,10 +452,10 @@ function renderQuestionPanel(): string {
                             <small>${event.note}</small>
                           </li>
                         `,
-                      )
-                      .join('')
-                  : '<li class="quiz-panel__note quiz-panel__note--empty"><span>No extra notes recorded for this reign.</span></li>'
-              }
+        )
+        .join('')
+      : '<li class="quiz-panel__note quiz-panel__note--empty"><span>No extra notes recorded for this reign.</span></li>'
+    }
             </ul>
           </div>
         </div>
@@ -632,22 +631,20 @@ function renderMonarchCards(items: Monarch[]): string {
           ${interactionAttrs}
         >
           <div class="monarch-card__portrait">
-            ${
-              imageVisible && !anonymized && imageUrl
-                ? `<img src="${imageUrl}" alt="${placement.monarch.name}" loading="lazy" />`
-                : `<span>${anonymized ? '?' : placement.monarch.portraitFallback}</span>`
-            }
+            ${imageVisible && !anonymized && imageUrl
+          ? `<img src="${imageUrl}" alt="${placement.monarch.name}" loading="lazy" />`
+          : `<span>${anonymized ? '?' : placement.monarch.portraitFallback}</span>`
+        }
           </div>
-          ${
-            placement.mode === 'badge'
-              ? ''
-              : `
+          ${placement.mode === 'badge'
+          ? ''
+          : `
                 <div class="monarch-card__text">
                   <strong>${anonymized ? '?' : placement.monarch.name}</strong>
                   ${dateVisible ? `<span>${placement.monarch.dateLabel}</span>` : ''}
                 </div>
               `
-          }
+        }
         </article>
       `
     })
@@ -668,11 +665,10 @@ function renderMonarchInfo(): string {
     <article class="monarch-info__card">
       <button class="monarch-info__close" type="button" data-close-monarch-info="true" aria-label="Close monarch details">Close</button>
       <div class="monarch-info__media">
-        ${
-          portraitUrl
-            ? `<img src="${portraitUrl}" alt="${monarch.name}" loading="lazy" />`
-            : `<div class="monarch-info__fallback">${monarch.portraitFallback}</div>`
-        }
+        ${portraitUrl
+      ? `<img src="${portraitUrl}" alt="${monarch.name}" loading="lazy" />`
+      : `<div class="monarch-info__fallback">${monarch.portraitFallback}</div>`
+    }
       </div>
       <div class="monarch-info__body">
         <p class="monarch-info__eyebrow">${monarch.house}</p>
@@ -737,16 +733,15 @@ function renderEvents(items: Monarch[]): string {
           aria-label="${event.year}: ${event.label}. ${event.detail ?? ''}"
         >
           <div class="timeline-event__marker"></div>
-          ${
-            event.showLabel
-              ? `
+          ${event.showLabel
+          ? `
                 <div class="timeline-event__label">
                   <strong>${event.year}</strong>
                   <span>${event.label}</span>
                 </div>
               `
-              : ''
-          }
+          : ''
+        }
           <div class="timeline-event__tooltip">
             <strong>${event.year} · ${event.label}</strong>
             <span>${event.detail ?? ''}</span>

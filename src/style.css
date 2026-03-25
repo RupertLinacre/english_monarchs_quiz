@@ -118,6 +118,15 @@ input {
   text-align: left;
 }
 
+.quiz-entry__timeline-hint {
+  margin: 0;
+  flex: 0 1 64ch;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
 .quiz-panel {
   margin-bottom: 14px;
 }
@@ -1143,6 +1152,10 @@ input {
   .quiz-entry__header h1 {
     font-size: clamp(1rem, 4.2vw, 1.2rem);
     max-width: none;
+  }
+
+  .quiz-entry__timeline-hint {
+    display: none;
   }
 
   .summary-strip {
