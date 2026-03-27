@@ -53,6 +53,15 @@ type AppState = {
 const WORLD_SPAN = WORLD_END_YEAR - WORLD_START_YEAR
 const MIN_VIEW_SPAN = 8
 const eventLanes = 4
+const desktopTimelineLayout = {
+  cardTopOffset: 10,
+  cardLaneGap: 26,
+  cardStackGap: 88,
+  reignTopOffset: 276,
+  reignLaneGap: 14,
+  eventTopOffset: 18,
+  eventLaneGap: 36,
+} as const
 const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin)
 const timelineYearCache = new Map<string, number>()
 const eventExplainers: Record<string, string> = {
@@ -409,7 +418,7 @@ function renderQuestionPanel(): string {
       <div class="quiz-panel__grid quiz-panel__grid--details-only">
         <div class="quiz-panel__details">
           <div class="quiz-panel__section">
-            <div class="quiz-panel__section-header">
+            <div class="quiz-panel__meta-line">
               <span class="quiz-panel__label">${reignLabel}</span>
               ${answerRevealed
       ? ''
@@ -420,9 +429,9 @@ function renderQuestionPanel(): string {
                       aria-expanded="${portraitRevealed ? 'true' : 'false'}"
                     >Clue</button>`
     }
-            </div>
-            <div class="quiz-panel__chips">
-              ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
+              <div class="quiz-panel__chips quiz-panel__chips--inline">
+                ${exactReigns.map((reign) => `<span class="quiz-panel__chip">${reign}</span>`).join('')}
+              </div>
             </div>
             ${!answerRevealed && portraitRevealed
       ? `
@@ -445,10 +454,8 @@ function renderQuestionPanel(): string {
         .map(
           (event) => `
                           <li class="quiz-panel__note">
-                            <div class="quiz-panel__note-heading">
-                              <strong>${event.year}</strong>
-                              <span>${event.label}</span>
-                            </div>
+                            <strong>${event.year}</strong>
+                            <span>${event.label}</span>
                             <small>${event.note}</small>
                           </li>
                         `,
@@ -541,7 +548,9 @@ function renderSegment(monarch: Monarch, reign: ReignRange, reignIndex: number, 
   const target = state.currentMonarchId === monarch.id && !revealed
   const recent = state.recentMonarchId === monarch.id
   const houseColor = houseColorMap.get(monarch.house) ?? '#6c4b3a'
-  const trackOffset = mobileTimeline ? 12 + lane * 18 : 344 + lane * 16
+  const trackOffset = mobileTimeline
+    ? 12 + lane * 18
+    : desktopTimelineLayout.reignTopOffset + lane * desktopTimelineLayout.reignLaneGap
   const renderedStart = getRenderedRangeStartPercent(metrics)
   const exactDates = getExactReignLabel(monarch.id, reignIndex, reign)
   const stateClass = revealed ? 'reign-segment--found' : target ? 'reign-segment--target' : 'reign-segment--ghost'
@@ -606,7 +615,9 @@ function renderMonarchCards(items: Monarch[]): string {
       const footprint = getCardFootprint(placement.mode)
       const trackOffset = mobileTimeline
         ? 28 + placement.lane * 24 + placement.stack * (footprint.width + 10)
-        : 14 + placement.lane * 34 + placement.stack * 116
+        : desktopTimelineLayout.cardTopOffset
+          + placement.lane * desktopTimelineLayout.cardLaneGap
+          + placement.stack * desktopTimelineLayout.cardStackGap
       const imageVisible = placement.mode !== 'badge'
       const dateVisible = placement.mode !== 'badge'
       const cardTitle = anonymized ? `Current clue: ${placement.monarch.dateLabel}` : `${placement.monarch.name}: ${placement.monarch.dateLabel}`
@@ -722,7 +733,9 @@ function renderEvents(items: Monarch[]): string {
   return placements
     .map((event) => {
       const x = getRenderedYearPercent(event.year)
-      const trackOffset = mobileTimeline ? 12 + event.lane * 54 : 24 + event.lane * 44
+      const trackOffset = mobileTimeline
+        ? 12 + event.lane * 54
+        : desktopTimelineLayout.eventTopOffset + event.lane * desktopTimelineLayout.eventLaneGap
       const style = mobileTimeline ? `top:${x}%; left:${trackOffset}px;` : `left:${x}%; top:${trackOffset}px;`
       return `
         <div

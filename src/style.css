@@ -255,6 +255,13 @@ input {
   gap: 10px;
 }
 
+.quiz-panel__meta-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .quiz-panel__section-header {
   display: flex;
   align-items: center;
@@ -294,6 +301,11 @@ input {
   gap: 10px;
 }
 
+.quiz-panel__chips--inline {
+  display: inline-flex;
+  align-items: center;
+}
+
 .quiz-panel__chip {
   padding: 10px 14px;
   border: 1px solid rgba(95, 69, 45, 0.14);
@@ -312,44 +324,34 @@ input {
 }
 
 .quiz-panel__note {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  gap: 14px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   padding: 12px 14px;
   border: 1px solid rgba(95, 69, 45, 0.12);
   border-radius: 18px;
   background: rgba(255, 251, 245, 0.86);
 }
 
-.quiz-panel__note-heading {
-  display: contents;
-}
-
 .quiz-panel__note strong {
-  grid-column: 1;
-  grid-row: 1 / span 2;
   color: var(--teal);
   font-size: 1rem;
 }
 
 .quiz-panel__note span {
-  display: block;
-  grid-column: 2;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .quiz-panel__note small {
-  display: block;
-  grid-column: 2;
-  margin-top: 4px;
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.35;
 }
 
 .quiz-panel__note--empty {
-  grid-template-columns: 1fr;
+  display: block;
 }
 
 .quiz-panel__portrait-clue {
@@ -558,7 +560,7 @@ input {
 
 .timeline-viewport {
   position: relative;
-  min-height: 720px;
+  min-height: 636px;
   overflow: hidden;
   border: 1px solid rgba(94, 69, 49, 0.16);
   border-radius: 24px;
@@ -575,7 +577,7 @@ input {
 
 .timeline-stage {
   position: relative;
-  min-height: 720px;
+  min-height: 636px;
 }
 
 .timeline-stage__houses,
@@ -594,17 +596,17 @@ input {
 
 .timeline-stage__monarchs {
   top: 72px;
-  height: 386px;
+  height: 310px;
 }
 
 .timeline-stage__axis {
-  top: 456px;
-  height: 54px;
+  top: 384px;
+  height: 50px;
 }
 
 .timeline-stage__events {
-  top: 510px;
-  height: 164px;
+  top: 434px;
+  height: 150px;
 }
 
 .timeline-stage__legend {
@@ -1218,7 +1220,8 @@ input {
     width: 100%;
   }
 
-  .quiz-panel__section-header {
+  .quiz-panel__section-header,
+  .quiz-panel__meta-line {
     align-items: flex-start;
   }
 
@@ -1240,22 +1243,7 @@ input {
   }
 
   .quiz-panel__note {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .quiz-panel__note-heading {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-
-  .quiz-panel__note strong,
-  .quiz-panel__note span,
-  .quiz-panel__note small {
-    grid-column: auto;
-    grid-row: auto;
+    gap: 6px 8px;
   }
 
   .quiz-panel__note strong {
