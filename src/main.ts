@@ -202,6 +202,7 @@ app.innerHTML = `
               spellcheck="false"
               placeholder="Type the monarch name..."
             />
+            <button id="clue-action" class="control-button control-button--desktop-clue" type="button">Clue</button>
             <button id="skip-action" class="control-button" type="button">Skip</button>
           </div>
         </label>
@@ -219,14 +220,16 @@ app.innerHTML = `
       </section>
     </section>
 
-    <section id="quiz-panel" class="quiz-panel" aria-live="polite"></section>
-
     <p id="status-text" class="status-text"></p>
 
-    <section class="timeline-panel">
-      <div id="timeline-viewport" class="timeline-viewport" aria-label="Zoomable monarch timeline"></div>
-      <section id="monarch-info" class="monarch-info" aria-live="polite"></section>
-    </section>
+    <div class="quiz-layout">
+      <section class="timeline-panel">
+        <div id="timeline-viewport" class="timeline-viewport" aria-label="Zoomable monarch timeline"></div>
+        <section id="monarch-info" class="monarch-info" aria-live="polite"></section>
+      </section>
+
+      <section id="quiz-panel" class="quiz-panel" aria-live="polite"></section>
+    </div>
 
     <section class="sources">
       <p>
@@ -258,6 +261,7 @@ const timerValue = document.querySelector<HTMLElement>('#timer-value')
 const statusText = document.querySelector<HTMLElement>('#status-text')
 const timelineViewport = document.querySelector<HTMLDivElement>('#timeline-viewport')
 const monarchInfo = document.querySelector<HTMLElement>('#monarch-info')
+const clueActionButton = document.querySelector<HTMLButtonElement>('#clue-action')
 const skipActionButton = document.querySelector<HTMLButtonElement>('#skip-action')
 const nextActionButton = document.querySelector<HTMLButtonElement>('#next-action')
 
@@ -275,6 +279,7 @@ if (
   !statusText ||
   !timelineViewport ||
   !monarchInfo ||
+  !clueActionButton ||
   !skipActionButton ||
   !nextActionButton
 ) {
@@ -294,6 +299,7 @@ const boundTimerValue = timerValue
 const boundStatusText = statusText
 const boundTimelineViewport = timelineViewport
 const boundMonarchInfo = monarchInfo
+const boundClueActionButton = clueActionButton
 const boundSkipActionButton = skipActionButton
 const boundNextActionButton = nextActionButton
 
@@ -306,6 +312,13 @@ boundAnswerInput.addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return
   event.preventDefault()
   submitCurrentGuess()
+})
+
+boundClueActionButton.addEventListener('click', () => {
+  if (!state.currentMonarchId || state.awaitingNextQuestion) return
+
+  state.hintVisible = !state.hintVisible
+  render()
 })
 
 boundSkipActionButton.addEventListener('click', () => {
@@ -347,6 +360,9 @@ function render(): void {
   boundAnswerFeedback.dataset.kind = answerRevealed ? (state.resultKind ?? 'skipped') : ''
   boundRevealedAnswerLabel.textContent = answerRevealed ? (state.resultKind === 'correct' ? 'Answered correctly' : 'Answer shown') : ''
   boundRevealedAnswer.textContent = answerRevealed && currentMonarch ? currentMonarch.name : ''
+  boundClueActionButton.hidden = !currentMonarch || answerRevealed
+  boundClueActionButton.disabled = !currentMonarch || answerRevealed
+  boundClueActionButton.classList.toggle('quiz-panel__clue-button--active', state.hintVisible)
   boundSkipActionButton.disabled = !currentMonarch || answerRevealed
   boundNextActionButton.hidden = !answerRevealed
   boundNextActionButton.disabled = !answerRevealed
@@ -424,6 +440,7 @@ function renderQuestionPanel(): string {
       ? ''
       : `<button
                       class="quiz-panel__clue-button ${portraitRevealed ? 'quiz-panel__clue-button--active' : ''}"
+                      data-panel-clue="true"
                       type="button"
                       data-toggle-hint="true"
                       aria-expanded="${portraitRevealed ? 'true' : 'false'}"
@@ -618,7 +635,8 @@ function renderMonarchCards(items: Monarch[]): string {
         : desktopTimelineLayout.cardTopOffset
           + placement.lane * desktopTimelineLayout.cardLaneGap
           + placement.stack * desktopTimelineLayout.cardStackGap
-      const imageVisible = placement.mode !== 'badge'
+      const portraitHintVisible = anonymized && state.hintVisible
+      const imageVisible = placement.mode !== 'badge' || portraitHintVisible
       const dateVisible = placement.mode !== 'badge'
       const cardTitle = anonymized ? `Current clue: ${placement.monarch.dateLabel}` : `${placement.monarch.name}: ${placement.monarch.dateLabel}`
       const ariaLabel = anonymized ? `Current clue. ${placement.monarch.dateLabel}` : `Open details for ${placement.monarch.name}`
@@ -642,8 +660,8 @@ function renderMonarchCards(items: Monarch[]): string {
           ${interactionAttrs}
         >
           <div class="monarch-card__portrait">
-            ${imageVisible && !anonymized && imageUrl
-          ? `<img src="${imageUrl}" alt="${placement.monarch.name}" loading="lazy" />`
+            ${imageVisible && imageUrl && (!anonymized || portraitHintVisible)
+          ? `<img src="${imageUrl}" alt="${anonymized ? 'Portrait hint for the current monarch' : placement.monarch.name}" loading="lazy" />`
           : `<span>${anonymized ? '?' : placement.monarch.portraitFallback}</span>`
         }
           </div>
